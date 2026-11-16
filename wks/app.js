@@ -2,7 +2,8 @@
 /* WKS Wissen – Schulunterlagen verstehen, anwenden, üben.
    Daten: verschlüsselt im Branch «wks-data» des Repos (vault.enc.json, keys.json), auf dem Gerät zwischengespeichert.
    Lernstand (Karten und «Verstanden»): lokal, auf Wunsch über ein geheimes Gist zwischen Geräten abgeglichen. */
-const APP_VERSION = "2.1.0";
+const APP_VERSION = "2.2.0";
+const COACH = "https://claude.ai/artifact/1kUjYrFwso8UnKLERj46mL"; // Lerncoach mit Claude (läuft über Lionels Claude-Abo)
 const REPO = "6dw6g8bch2-lab/Lionel", DATA_BRANCH = "wks-data";
 const ISSUE_TITLE = "WKS-Schlüssel", PROG_DESC = "WKS Lernstand (verschlüsselt)", F_PROG = "wks-progress.enc.json";
 const K_CFG = "wks-cfg-v2", K_CACHE = "wks-vault-cache-v2", K_PROG = "wks-progress-v1", K_KEYS = "wks-keys-v2", K_RKEYS = "wks-remote-keys";
@@ -167,6 +168,10 @@ function tile(f) {
 }
 const trow = t => `<button type="button" class="trow" data-thema="${esc(t.id)}"><span class="t">${esc(t.titel)}</span>${stateChip(t.id)}<span class="s">${esc(plain(t.kurz || paras(t.zusammenfassung)[0] || ""))}</span></button>`;
 const ghost = `class="pill ghost" style="color:#f4f4f5;border-color:#6a6a72"`;
+const coachLink = (mode, label, cls = "pill ghost sm") => `<a class="${cls}" href="${COACH}#${mode}" target="_blank" rel="noopener">${label} <span class="sr-only">(öffnet Claude in neuem Fenster)</span>${ARROW}</a>`;
+const coachCard = () => `<section class="coach glow" style="--fc:var(--c4)" aria-labelledby="h-coach"><span class="eyebrow">Mit Claude</span><h2 class="h2" id="h-coach">Dein Lerncoach</h2>
+  <p class="when">Lass dich abfragen, lass dir Unklares neu erklären, lass Französisch- oder Englischtexte korrigieren oder mach dir einen Lernplan bis zur Prüfung.</p>
+  <div class="row">${coachLink("abfragen", "Abfragen lassen", "pill light")}${coachLink("erklaeren", "Erklären lassen", "pill ghost coach-ghost")}${coachLink("korrigieren", "Text korrigieren", "pill ghost coach-ghost")}${coachLink("lernplan", "Lernplan", "pill ghost coach-ghost")}</div></section>`;
 
 /* ---------- Seiten ---------- */
 function pageStart() {
@@ -188,6 +193,7 @@ function pageStart() {
       ${f ? `<div class="row"><button class="pill light" type="button" data-learn="fach:${esc(f.id)}">Für diese Prüfung üben ${ARROW}</button><button ${ghost} type="button" data-fach="${esc(f.id)}">Themen ansehen</button></div>` : ""}</section>`;
   }
   html += `<section class="stats" aria-label="Überblick"><div class="stat"><b class="num">${TH.length}</b><span>Themen</span></div><div class="stat"><b class="num">${done}</b><span>verstanden</span></div><div class="stat"><b class="num">${DUE.size}</b><span>Karten fällig</span></div></section>`;
+  html += coachCard();
   if (recheck.length) html += `<section class="sec" aria-labelledby="h-re"><div class="sec-head"><h2 class="h2" id="h-re">Vor der Prüfung nochmals prüfen</h2></div><p class="muted small">Diese Themen hast du schon verstanden. Geh sie kurz durch und mach die Übungen nochmals.</p><div class="tlist">${recheck.map(trow).join("")}</div></section>`;
   if (open.length) html += `<section class="sec" aria-labelledby="h-open"><div class="sec-head"><h2 class="h2" id="h-open">Als Nächstes verstehen</h2>${openAll.length > 4 ? `<button class="pill ghost sm" type="button" data-allopen aria-expanded="${showAllOpen}">${showAllOpen ? "Weniger zeigen" : `Alle ${openAll.length} offenen Themen`}</button>` : ""}</div><div class="tlist">${open.map(trow).join("")}</div></section>`;
   html += `<section class="sec" aria-labelledby="h-f"><div class="sec-head"><h2 class="h2" id="h-f">Deine Fächer</h2></div><div class="mosaic">${F.map(tile).join("")}</div></section>`;
@@ -229,13 +235,13 @@ function pageThema(id) {
   return `${back(f ? f.name : "Fächer", f ? "fach:" + f.id : "faecher")}
     <section class="thead glow" style="--fc:${fcol(f)}"><div class="row">${f ? `<span class="chip" style="--fc:${fcol(f)}"><span class="dot"></span>${esc(f.name)}</span>` : ""}${stateChip(t.id)}${isDemo ? `<span class="example">Beispiel</span>` : ""}</div>
       <h1 class="display" id="h-main" tabindex="-1" style="font-size:clamp(2rem,7vw,3.6rem)">${esc(t.titel)}</h1>${t.kurz ? `<p class="lead">${inline(t.kurz)}</p>` : ""}
-      <div class="row">${ks.length ? `<button class="pill" type="button" data-learn="thema:${esc(t.id)}">${plural(ks.length, "Karte", "Karten")} üben ${ARROW}</button>` : ""}<a class="pill ghost sm" href="#check">Verstanden?</a></div>
+      <div class="row">${ks.length ? `<button class="pill" type="button" data-learn="thema:${esc(t.id)}">${plural(ks.length, "Karte", "Karten")} üben ${ARROW}</button>` : ""}${coachLink("abfragen", "Mit Claude üben")}<a class="pill ghost sm" href="#check">Verstanden?</a></div>
       ${t.quelle ? `<p class="source">Aus: ${esc(t.quelle)}${t.aktualisiert ? " · " + esc(fmtDate(t.aktualisiert)) : ""}</p>` : ""}</section>
     ${blocks.length > 2 ? `<nav class="toc" aria-label="Auf dieser Seite">${blocks.map(b => `<a href="#${b.key}">${esc(b.title)}</a>`).join("")}<a href="#check">Verstanden?</a></nav>` : ""}
     ${blocks.map((b, i) => `<section class="block" id="${b.key}" aria-labelledby="h-${b.key}" style="--fc:${fcol(f)}"><div class="block-h"><span class="n" aria-hidden="true">${i + 1}</span><h2 id="h-${b.key}">${esc(b.title)}</h2></div>${b.body}</section>`).join("")}
     <section class="block card check" id="check" aria-labelledby="h-check"><h2 id="h-check" class="h2">Hast du es verstanden?</h2><p class="muted">Sei ehrlich mit dir. Was noch unklar ist, zeigt dir die Startseite als Nächstes.</p>
       <div class="seg" role="group" aria-label="Wie gut verstehst du das Thema?">${[1, 2, 3].map(x => `<button type="button" data-u="${x}" data-uid="${esc(t.id)}" aria-pressed="${u === x}">${U_LABEL[x]}<small>${["", "Nochmals lesen", "Übungen machen", "Sitzt"][x]}</small></button>`).join("")}</div>
-      ${u === 1 ? `<p class="small">Tipp: Lies «Einfach erklärt» und das Beispiel nochmals langsam durch. Bleibt etwas unklar, frag deine Lehrperson oder schreib Claude, was du nicht verstehst.</p>` : u === 2 ? `<p class="small">Tipp: Mach die Übungen, bis alle richtig sind.</p>` : ""}
+      ${u === 1 ? `<p class="small">Tipp: Lies «Einfach erklärt» und das Beispiel nochmals langsam durch. Bleibt etwas unklar, lass es dir im Coach neu erklären.</p>${coachLink("erklaeren", "Im Coach erklären lassen")}` : u === 2 ? `<p class="small">Tipp: Mach die Übungen, bis alle richtig sind.</p>` : ""}
       ${u && u < 3 && ks.length ? `<button class="pill sm" type="button" data-learn="thema:${esc(t.id)}">Mit den Karten festigen ${ARROW}</button>` : ""}</section>`;
 }
 function pageLearn() {
