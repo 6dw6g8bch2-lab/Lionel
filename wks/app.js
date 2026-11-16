@@ -2,7 +2,7 @@
 /* WKS Wissen – Schulunterlagen verstehen, anwenden, üben.
    Daten: verschlüsselt im Branch «wks-data» des Repos (vault.enc.json, keys.json), auf dem Gerät zwischengespeichert.
    Lernstand (Karten und «Verstanden»): lokal, auf Wunsch über ein geheimes Gist zwischen Geräten abgeglichen. */
-const APP_VERSION = "2.4.0";
+const APP_VERSION = "2.4.1";
 const COACH = "https://claude.ai/artifact/1kUjYrFwso8UnKLERj46mL"; // Lerncoach mit Claude (läuft über Lionels Claude-Abo)
 const REPO = "6dw6g8bch2-lab/Lionel", DATA_BRANCH = "wks-data";
 const ISSUE_TITLE = "WKS-Schlüssel", PROG_DESC = "WKS Lernstand (verschlüsselt)", F_PROG = "wks-progress.enc.json";
@@ -323,6 +323,7 @@ function pageSettings() {
     html += `<p class="status" id="setMsg" role="status"></p>`;
   } else {
     html += `<p>Eingerichtet. ${esc(statusText())}.</p>`;
+    if (!remoteKeys && !local) html += `<div class="note warn"><b>Der Schlüssel fehlt auf diesem Gerät</b><p>Das Passwort wurde wohl auf einem anderen Gerät festgelegt. Tippe unten zweimal auf «Auf diesem Gerät abmelden» und leg danach hier ein neues Passwort fest. Dann erscheint der Knopf «Schlüssel übergeben».</p></div>`;
     if (!remoteKeys && local) html += `<div class="note warn"><b>Schlüssel an Claude übergeben</b><ol class="olist"><li>Tippe auf den Knopf. GitHub öffnet ein ausgefülltes Formular.</li><li>Tippe dort auf <b>«Submit new issue»</b> bzw. <b>«Create»</b>.</li><li>Claude übernimmt den Schlüssel beim nächsten Abendlauf. Sofort: schreib Claude «Aktualisier die WKS-App».</li></ol><p class="small">Der Schlüssel ist mit deinem Passwort versiegelt und ohne Passwort nutzlos.</p><a class="pill" href="${esc(issueUrl(local))}" target="_blank" rel="noopener">Schlüssel übergeben ${ARROW}</a></div>`;
     html += `<p class="status ${sync.state === "err" ? "err" : ""}" id="setMsg" role="status">${sync.state === "err" ? esc(sync.msg) : ""}</p>
       <div class="row"><button class="pill ghost" type="button" id="btnRefresh">Jetzt neu laden</button><button class="pill ghost" style="color:var(--bad);border-color:var(--bad)" type="button" id="btnReset">Auf diesem Gerät abmelden</button></div>`;
