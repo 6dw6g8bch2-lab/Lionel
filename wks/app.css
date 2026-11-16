@@ -65,7 +65,7 @@ h1:focus,h2:focus,.page:focus{outline:none}
 .pill.light{background:#fff;color:#121214}
 .pill.sm{padding:8px 16px;min-height:40px;font-size:.9rem}
 .pill:disabled{opacity:.5;cursor:default}
-.pill .arr{transition:transform .2s}.pill:hover .arr{transform:translateX(3px)}
+@media (prefers-reduced-motion:no-preference){.pill .arr{transition:transform .2s}.pill:hover .arr{transform:translateX(3px)}}
 .chip{display:inline-flex;align-items:center;gap:7px;font-size:.8rem;font-weight:700;padding:5px 12px;border-radius:999px;background:var(--surface2);color:var(--muted);white-space:nowrap}
 .dot{width:9px;height:9px;border-radius:50%;background:var(--fc,var(--accent));flex:0 0 auto;box-shadow:0 0 10px var(--fc,var(--accent))}
 .row{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center}
@@ -88,10 +88,10 @@ h1:focus,h2:focus,.page:focus{outline:none}
 .hero-card .when{color:#d4d4dc;font-size:1rem}
 .hero-card .row{flex-wrap:nowrap}
 @media (max-width:600px){.hero-card .row{flex-wrap:wrap}}
-.coach{border-radius:calc(var(--r) + 6px);padding:clamp(22px,5vw,36px);display:grid;gap:12px;background:#0d0d10;color:#f4f4f5;border:1px solid #232329}
-.coach .eyebrow{color:#c9c9d1}.coach .when{color:#d4d4dc;max-width:60ch}
-.coach .coach-ghost{color:#f4f4f5;border-color:#6a6a72;padding:10px 18px;min-height:44px;font-size:.92rem}
-a.pill .sr-only{position:absolute}
+.coach{border-radius:calc(var(--r) + 6px);padding:clamp(22px,5vw,32px);display:grid;gap:12px;background:var(--surface);border:1px solid var(--line)}
+.coach .muted{max-width:60ch}
+.coach-btns{display:flex;flex-wrap:wrap;gap:10px}
+@media (max-width:600px){.coach-btns{display:grid;grid-template-columns:1fr 1fr}.coach-btns .pill{justify-self:stretch;justify-content:center;text-align:center;padding-inline:10px;font-size:.9rem}}
 .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);padding:16px;display:grid;gap:2px}
 .stat b{font-size:clamp(1.6rem,5vw,2.2rem);font-weight:800;letter-spacing:-.04em;line-height:1}
