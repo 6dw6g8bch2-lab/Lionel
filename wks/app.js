@@ -2,7 +2,7 @@
 /* WKS Wissen – Schulunterlagen verstehen, anwenden, üben.
    Daten: verschlüsselt im Branch «wks-data» des Repos (vault.enc.json, keys.json), auf dem Gerät zwischengespeichert.
    Lernstand (Karten und «Verstanden»): lokal, auf Wunsch über ein geheimes Gist zwischen Geräten abgeglichen. */
-const APP_VERSION = "2.3.0";
+const APP_VERSION = "2.4.0";
 const COACH = "https://claude.ai/artifact/1kUjYrFwso8UnKLERj46mL"; // Lerncoach mit Claude (läuft über Lionels Claude-Abo)
 const REPO = "6dw6g8bch2-lab/Lionel", DATA_BRANCH = "wks-data";
 const ISSUE_TITLE = "WKS-Schlüssel", PROG_DESC = "WKS Lernstand (verschlüsselt)", F_PROG = "wks-progress.enc.json";
@@ -136,7 +136,7 @@ function setUnderstood(id, u) {
   if (isDemo) DPR["th:" + id] = {u, ts:Date.now()};
   else { PR["th:" + id] = {u, ts:Date.now()}; lsSet(K_PROG, PR); schedulePush(); }
   rerender();
-  say(U_LABEL[u] + (isDemo ? " gemerkt (im Beispiel nur bis zum Schliessen)." : " gespeichert.") + (u === 1 ? " Lies zuerst «Einfach erklärt» nochmals." : u === 2 ? " Mach als Nächstes die Übungen." : ""));
+  say(U_LABEL[u] + (isDemo ? " gemerkt (bis zum Schliessen)." : " gespeichert.") + (u === 1 ? " Lies zuerst «Einfach erklärt» nochmals." : u === 2 ? " Mach als Nächstes die Übungen." : ""));
   const target = u === 1 ? "erklaert" : u === 2 ? "ueben" : "";
   const el = target && document.getElementById(target);
   if (el) { el.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion:reduce)").matches ? "auto" : "smooth"}); const h = el.querySelector("h2"); h.setAttribute("tabindex", "-1"); h.focus({preventScroll:true}); }
@@ -145,15 +145,15 @@ function setUnderstood(id, u) {
 
 /* ---------- Bausteine ---------- */
 function statusText() {
-  if (!CFG.ready) return "Beispiel";
+  if (!CFG.ready) return "Nicht entsperrt";
   if (isDemo) return remoteKeys ? "Eingerichtet · noch keine Unterlagen" : "Eingerichtet · Schlüssel noch nicht bei Claude";
   const s = V.status, w = s && s.letzteAktualisierung ? new Date(s.letzteAktualisierung) : V.erstellt ? new Date(V.erstellt) : null;
   return w ? "Stand " + w.toLocaleString("de-CH", {day:"numeric", month:"numeric", hour:"2-digit", minute:"2-digit"}) : "";
 }
 function notice() {
-  if (!CFG.ready) return `<div class="note"><b>Das ist ein Beispiel.</b><p>Richte die App einmal mit einem Passwort ein. Danach siehst du hier deine eigenen Unterlagen.</p><button class="pill sm" type="button" data-tab="settings">Einrichten ${ARROW}</button></div>`;
+  if (!CFG.ready) return `<div class="note"><b>Noch nicht entsperrt</b><p>Gib unter Einstellungen dein Passwort ein. Danach siehst du hier deine Unterlagen. Den Lerncoach kannst du auch ohne Passwort nutzen.</p><button class="pill sm" type="button" data-tab="settings">Einrichten ${ARROW}</button></div>`;
   if (!remoteKeys) return lsGet(K_KEYS, null) ? `<div class="note warn"><b>Noch ein Schritt</b><p>Übergib deinen Schlüssel an Claude, sonst kann Claude deine Notizen nicht für dich verschlüsseln.</p><button class="pill sm" type="button" data-tab="settings">Schlüssel übergeben ${ARROW}</button></div>` : "";
-  if (isDemo) return `<div class="note warn"><b>Noch keine Unterlagen</b><p>Leg PDFs, Word- oder PowerPoint-Dateien in deinen OneDrive-Ordner <b>WKS</b>, am besten in einen Unterordner pro Fach. Claude bereitet sie jeden Abend um 18:37 Uhr auf. Bis dahin siehst du ein Beispiel.</p></div>`;
+  if (isDemo) return `<div class="note warn"><b>Noch keine Unterlagen</b><p>Leg PDFs, Word- oder PowerPoint-Dateien in deinen OneDrive-Ordner <b>WKS</b>, am besten in einen Unterordner pro Fach. Claude bereitet sie jeden Abend um 18:37 Uhr auf.</p></div>`;
   const s = V.status, w = s && s.letzteAktualisierung ? new Date(s.letzteAktualisierung) : null;
   if (w && (Date.now() - w) / 864e5 > STALE_DAYS) return `<div class="note warn"><b>Seit ${Math.floor((Date.now() - w) / 864e5)} Tagen nicht aktualisiert</b><p>Schreib Claude: «Aktualisier die WKS-App».</p></div>`;
   return "";
@@ -190,7 +190,7 @@ function pageStart() {
   if (sync.state === "err") html += `<div class="note err"><b>Verbindung</b><p>${esc(sync.msg)} Du siehst den letzten gespeicherten Stand.</p></div>`;
   if (next) {
     const n = daysUntil(next.datum), f = fachOf(next.fach), s = f ? fachStats(f.id) : null;
-    html += `<section class="hero-card glow" style="--fc:${fcol(f)}" aria-labelledby="h-next"><span class="eyebrow">${n === 0 ? "Heute" : n === 1 ? "Morgen" : `In ${n} Tagen`} · ${esc(next.art)}${f ? " · " + esc(f.name) : ""}${isDemo ? " · Beispiel" : ""}</span>
+    html += `<section class="hero-card glow" style="--fc:${fcol(f)}" aria-labelledby="h-next"><span class="eyebrow">${n === 0 ? "Heute" : n === 1 ? "Morgen" : `In ${n} Tagen`} · ${esc(next.art)}${f ? " · " + esc(f.name) : ""}</span>
       <h2 class="big" id="h-next">${esc(next.titel)}</h2><p class="when">${esc(fmtDate(next.datum))}${s && s.th.length ? ` · ${s.done} von ${s.th.length} Themen verstanden` : ""}</p>
       ${f ? `<div class="row"><button class="pill light" type="button" data-learn="fach:${esc(f.id)}">Für diese Prüfung üben ${ARROW}</button><button ${ghost} type="button" data-fach="${esc(f.id)}">Themen ansehen</button></div>` : ""}</section>`;
   }
@@ -209,7 +209,7 @@ function pageFach(id) {
   const f = fachOf(id); if (!f) return pageFaecher();
   const s = fachStats(id), te = TE.filter(t => t.fach === id && t.datum >= today()).sort((a, b) => a.datum.localeCompare(b.datum));
   const th = [...s.th].sort((a, b) => uOf(a.id) - uOf(b.id) || a.titel.localeCompare(b.titel, "de"));
-  return `${back("Fächer", "faecher")}<section class="hero-card glow" style="--fc:${fcol(f)}"><span class="eyebrow">Fach${isDemo ? " · Beispiel" : ""}</span><h1 class="big" id="h-main" tabindex="-1">${esc(f.name)}</h1>
+  return `${back("Fächer", "faecher")}<section class="hero-card glow" style="--fc:${fcol(f)}"><span class="eyebrow">Fach</span><h1 class="big" id="h-main" tabindex="-1">${esc(f.name)}</h1>
     <p class="when">${s.done} von ${s.th.length} Themen verstanden · ${plural(s.kc, "Karte", "Karten")}${te[0] ? ` · ${esc(te[0].art)} am ${esc(fmtDate(te[0].datum))}` : ""}</p>
     <div class="meter" aria-hidden="true" style="background:#2a2a30"><div style="width:${s.th.length ? s.done / s.th.length * 100 : 0}%"></div></div>
     ${s.kc ? `<div class="row"><button class="pill light" type="button" data-learn="fach:${esc(id)}">${te[0] && daysUntil(te[0].datum) <= EXAM_DAYS ? "Für die Prüfung üben" : s.due ? `${plural(s.due, "fällige Karte", "fällige Karten")} üben` : "Karten wiederholen"} ${ARROW}</button></div>` : ""}</section>
@@ -235,7 +235,7 @@ function pageThema(id) {
   if (t.merksatz) add("merksatz", "Merksatz", `<div class="motto glow" style="--fc:${fcol(f)}">${inline(t.merksatz)}</div>`);
   if (t.begriffe.length) add("begriffe", "Begriffe", `<dl class="terms">${t.begriffe.map(b => `<div><dt>${esc(b.begriff)}</dt><dd>${inline(b.erklaerung)}</dd></div>`).join("")}</dl>`);
   return `${back(f ? f.name : "Fächer", f ? "fach:" + f.id : "faecher")}
-    <section class="thead glow" style="--fc:${fcol(f)}"><div class="row">${f ? `<span class="chip" style="--fc:${fcol(f)}"><span class="dot"></span>${esc(f.name)}</span>` : ""}${stateChip(t.id)}${isDemo ? `<span class="example">Beispiel</span>` : ""}</div>
+    <section class="thead glow" style="--fc:${fcol(f)}"><div class="row">${f ? `<span class="chip" style="--fc:${fcol(f)}"><span class="dot"></span>${esc(f.name)}</span>` : ""}${stateChip(t.id)}</div>
       <h1 class="display" id="h-main" tabindex="-1" style="font-size:clamp(2rem,7vw,3.6rem)">${esc(t.titel)}</h1>${t.kurz ? `<p class="lead">${inline(t.kurz)}</p>` : ""}
       <div class="row">${ks.length ? `<button class="pill" type="button" data-learn="thema:${esc(t.id)}">${plural(ks.length, "Karte", "Karten")} üben ${ARROW}</button>` : ""}${coachLink("abfragen", "Mit Claude üben", "pill ghost sm", t.id)}<a class="pill ghost sm" href="#check">Verstanden?</a></div>
       ${t.quelle ? `<p class="source">Aus: ${esc(t.quelle)}${t.aktualisiert ? " · " + esc(fmtDate(t.aktualisiert)) : ""}</p>` : ""}</section>
@@ -248,7 +248,6 @@ function pageThema(id) {
 }
 function pageLearn() {
   let html = `<section class="hero"><span class="eyebrow">Karteikarten</span><h1 class="display" id="h-main" tabindex="-1">Lernen</h1></section>`;
-  if (isDemo) html += `<div class="note warn"><p>Beispielkarten: Dein Lernstand wird erst mit echten Unterlagen gespeichert.</p></div>`;
   if (!K.length) return html + `<div class="note"><p>Noch keine Karten.</p></div>`;
   const scopes = [["faellig", "Fällig", DUE.size], ["alle", "Alle", K.length], ...F.map(f => ["fach:" + f.id, f.name, K.filter(k => k.fach === f.id).length]).filter(x => x[2])];
   const custom = learnScope.startsWith("thema:") ? themaOf(learnScope.slice(6)) : null;
@@ -282,7 +281,7 @@ function pageDates() {
   const up = TE.filter(t => t.datum >= today()).sort((a, b) => a.datum.localeCompare(b.datum)), past = TE.filter(t => t.datum < today()).sort((a, b) => b.datum.localeCompare(a.datum));
   const row = t => { const d = D(t.datum), f = fachOf(t.fach), n = daysUntil(t.datum);
     return `<button class="term" type="button" ${f ? `data-fach="${esc(f.id)}"` : "disabled"}><span class="date" aria-hidden="true"><span>${WD[d.getDay()]}</span><b class="num">${d.getDate()}</b><span>${MON[d.getMonth()]}</span></span>
-      <span class="tb"><span class="t">${esc(t.titel)}</span><span class="s">${esc(t.art)}${f ? " · " + esc(f.name) : ""}<span class="sr-only">, ${esc(fmtDate(t.datum))}</span>${isDemo ? ` <span class="example">Beispiel</span>` : ""}</span>${n >= 0 ? `<span class="when-pill ${n <= EXAM_DAYS ? "bad" : n <= 10 ? "warn" : "neutral"}">${n === 0 ? "heute" : n === 1 ? "morgen" : `in ${n} Tagen`}</span>` : ""}</span></button>`; };
+      <span class="tb"><span class="t">${esc(t.titel)}</span><span class="s">${esc(t.art)}${f ? " · " + esc(f.name) : ""}<span class="sr-only">, ${esc(fmtDate(t.datum))}</span></span>${n >= 0 ? `<span class="when-pill ${n <= EXAM_DAYS ? "bad" : n <= 10 ? "warn" : "neutral"}">${n === 0 ? "heute" : n === 1 ? "morgen" : `in ${n} Tagen`}</span>` : ""}</span></button>`; };
   return `<section class="hero"><span class="eyebrow">Prüfungen und Abgaben</span><h1 class="display" id="h-main" tabindex="-1">Termine</h1></section>
     ${up.length ? `<div class="tlist">${up.map(row).join("")}</div>` : `<div class="note"><p>Keine kommenden Termine. Claude erkennt Prüfungsdaten, wenn sie in deinen Unterlagen stehen.</p></div>`}
     ${past.length ? `<details class="sec"><summary class="eyebrow" style="cursor:pointer;min-height:44px;display:flex;align-items:center">Vergangen (${past.length})</summary><div class="tlist">${past.map(row).join("")}</div></details>` : ""}`;

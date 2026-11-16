@@ -1,48 +1,6 @@
 "use strict";
-/* Beispielinhalt: wird nur angezeigt, solange noch keine echten Unterlagen verarbeitet sind. */
-const DEMO_VAULT = (() => {
-  const d = n => { const x = new Date(); x.setDate(x.getDate() + n); return x.toISOString().slice(0, 10); };
-  return {v:1, beispiel:true, erstellt:new Date().toISOString(),
-    faecher:[{id:"wg", name:"W&G", farbe:0, reihenfolge:1}, {id:"franzoesisch", name:"Französisch", farbe:2, reihenfolge:2}, {id:"englisch", name:"Englisch", farbe:4, reihenfolge:3}],
-    themen:[
-      {id:"t-bilanz", fach:"wg", titel:"Die Bilanz", tags:["rechnungswesen"], quelle:"Beispiel", aktualisiert:d(-2),
-        kurz:"Die Bilanz zeigt an einem bestimmten Tag, was eine Firma besitzt und woher das Geld dafür kommt.",
-        zusammenfassung:"Stell dir die Bilanz wie ein Foto vor: Sie zeigt den Stand an einem Stichtag, zum Beispiel am 31. Dezember.\n\nLinks stehen die **Aktiven**: alles, was die Firma hat, also Kasse, Bankkonto, Maschinen. Rechts stehen die **Passiven**: woher das Geld stammt, also Schulden (Fremdkapital) und eigenes Geld (Eigenkapital). Beide Seiten sind immer gleich gross.",
-        kernpunkte:["Bilanz = Momentaufnahme an einem Stichtag", "Aktiven = was die Firma hat", "Passiven = woher das Geld kommt", "Summe Aktiven = Summe Passiven"],
-        beispiel:"Eine Velowerkstatt hat CHF 5'000 auf der Bank und Werkzeug für CHF 15'000 (Aktiven: 20'000). Dafür hat der Inhaber CHF 12'000 eigenes Geld eingesetzt und CHF 8'000 Darlehen aufgenommen (Passiven: 20'000).",
-        schritte:["Liste alles auf, was die Firma besitzt (Aktiven).", "Ordne die Aktiven: zuerst Umlaufvermögen (schnell zu Geld), dann Anlagevermögen.", "Liste auf, woher das Geld stammt (Passiven): zuerst Fremdkapital, dann Eigenkapital.", "Prüfe, ob beide Summen gleich sind."],
-        aufgaben:[{frage:"Gehört ein Lieferwagen zu den Aktiven oder Passiven?", loesung:"Zu den Aktiven (Anlagevermögen), denn die Firma besitzt ihn."}, {frage:"Ein Bankdarlehen von CHF 10'000: Aktiven oder Passiven?", loesung:"Passiven (Fremdkapital), denn es ist Geld, das die Firma jemandem schuldet."}],
-        fehler:["Darlehen bei den Aktiven eintragen, weil Geld hereinkommt. Das Darlehen selbst ist eine Schuld (Passiven), das Geld auf der Bank ein Aktivum."],
-        merksatz:"Links, was ich habe. Rechts, woher ich es habe.",
-        begriffe:[{begriff:"Aktiven", erklaerung:"Vermögen der Firma: Umlauf- und Anlagevermögen."}, {begriff:"Passiven", erklaerung:"Herkunft des Kapitals: Fremd- und Eigenkapital."}]},
-      {id:"t-er", fach:"wg", titel:"Erfolgsrechnung", tags:["rechnungswesen"], quelle:"Beispiel", aktualisiert:d(-1),
-        kurz:"Die Erfolgsrechnung zeigt, ob eine Firma in einem Zeitraum Gewinn oder Verlust gemacht hat.",
-        zusammenfassung:"Die Erfolgsrechnung vergleicht über einen Zeitraum (zum Beispiel ein Jahr) den **Aufwand** mit dem **Ertrag**.\n\nIst der Ertrag grösser, gibt es Gewinn. Ist der Aufwand grösser, gibt es Verlust.",
-        kernpunkte:["Zeitraumrechnung, nicht Stichtag", "Ertrag − Aufwand = Gewinn oder Verlust"],
-        beispiel:"Die Velowerkstatt verdient im Jahr CHF 60'000 mit Reparaturen (Ertrag). Miete, Lohn und Material kosten CHF 52'000 (Aufwand). Gewinn: CHF 8'000.",
-        schritte:["Sammle alle Erträge des Zeitraums.", "Sammle allen Aufwand des Zeitraums.", "Rechne Ertrag minus Aufwand."],
-        aufgaben:[{frage:"Ertrag 40'000, Aufwand 43'000. Gewinn oder Verlust?", loesung:"Verlust von CHF 3'000."}],
-        fehler:["Bilanz und Erfolgsrechnung verwechseln: Die Bilanz ist ein Foto, die Erfolgsrechnung ein Film."],
-        merksatz:"Ertrag minus Aufwand gleich Erfolg.",
-        begriffe:[{begriff:"Aufwand", erklaerung:"Wertverzehr, z. B. Löhne oder Miete."}, {begriff:"Ertrag", erklaerung:"Wertzuwachs, z. B. Verkaufserlöse."}]},
-      {id:"t-subj", fach:"franzoesisch", titel:"Le subjonctif", tags:["grammatik"], quelle:"Beispiel", aktualisiert:d(0),
-        kurz:"Den Subjonctif brauchst du nach Ausdrücken von Wunsch, Pflicht und Gefühl.",
-        zusammenfassung:"Nach Ausdrücken wie «il faut que», «je veux que» oder «je suis content que» steht das Verb im Subjonctif.\n\nSo bildest du ihn: Nimm die ils-Form im Präsens (ils parlent), streiche -ent (parl-) und hänge -e, -es, -e, -ions, -iez, -ent an.",
-        kernpunkte:["Nach il faut que, vouloir que, avant que", "Stamm aus der ils-Form", "Unregelmässig: être, avoir, aller, faire"],
-        beispiel:"Il faut que tu finisses ton travail avant vendredi.",
-        schritte:["Erkenne den Auslöser (z. B. il faut que).", "Nimm die ils-Form des Verbs im Präsens.", "Streiche -ent und setze die passende Endung."],
-        aufgaben:[{frage:"Il faut que nous … (parler)", loesung:"Il faut que nous parlions."}, {frage:"Je veux que tu … (venir)", loesung:"Je veux que tu viennes."}],
-        fehler:["Nach «je pense que» den Subjonctif setzen. Dort steht der Indikatif."],
-        merksatz:"Wunsch, Pflicht, Gefühl: dann Subjonctif.",
-        begriffe:[{begriff:"Subjonctif", erklaerung:"Modus für Wunsch, Pflicht, Gefühl und Zweifel."}]},
-    ],
-    karten:[
-      {id:"t-bilanz-k1", fach:"wg", thema:"t-bilanz", frage:"Wie sind die Aktiven geordnet?", antwort:"Nach Liquidität: zuerst Umlaufvermögen, dann Anlagevermögen."},
-      {id:"t-bilanz-k2", fach:"wg", thema:"t-bilanz", frage:"Was zeigen die Passiven?", antwort:"Woher das Geld kommt: Fremdkapital und Eigenkapital."},
-      {id:"t-er-k1", fach:"wg", thema:"t-er", frage:"Wie berechnet man den Erfolg?", antwort:"Ertrag minus Aufwand."},
-      {id:"t-subj-k1", fach:"franzoesisch", thema:"t-subj", frage:"Il faut que tu … (venir)", antwort:"Il faut que tu viennes."},
-      {id:"t-subj-k2", fach:"franzoesisch", thema:"t-subj", frage:"Wie bildet man den Stamm des Subjonctif?", antwort:"Aus der ils-Form im Präsens: ils parlent → parl-."},
-    ],
-    termine:[{id:"d-1", fach:"franzoesisch", titel:"Prüfung Subjonctif", art:"Prüfung", datum:d(9)}],
-    status:null};
-})();
+/* Leerer Startzustand: wird angezeigt, solange die App nicht entsperrt ist oder noch keine Unterlagen verarbeitet sind.
+   Enthält nur Lionels Fächer, keine Beispielinhalte. */
+const DEMO_VAULT = {v:1, erstellt:"", status:null,
+  faecher:[{id:"wirtschaft", name:"Wirtschaft", farbe:0, reihenfolge:1}, {id:"englisch", name:"Englisch", farbe:4, reihenfolge:2}, {id:"technologie", name:"Technologie", farbe:6, reihenfolge:3}, {id:"deutsch", name:"Deutsch", farbe:1, reihenfolge:4}, {id:"franzoesisch", name:"Französisch", farbe:2, reihenfolge:5}],
+  themen:[], karten:[], termine:[]};
