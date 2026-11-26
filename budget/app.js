@@ -1,6 +1,6 @@
 "use strict";
 /* Lionels Budget – läuft komplett im Browser, Daten liegen in localStorage auf dem Gerät. */
-const APP_VERSION = "3.0.1";
+const APP_VERSION = "3.0.3";
 const STORE_KEY = "lionel-budget-v1";
 const EARLY_PAY_DAYS = 7, MIN_TEMPO_DAYS = 5, GOOD_MARGIN = 20, WARN_SHARE = .8, PACE_TOL = .05, BACKUP_REMIND_DAYS = 7;
 
@@ -53,7 +53,7 @@ const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 
 const isDate = v => /^\d{4}-\d{2}-\d{2}$/.test(String(v));
 
 /* ---------- Speicher ---------- */
-const DEF_SETTINGS = {startBalance:0, startDate:todayIso(), goal:0, income:0, payday:25, limits:{}, recurring:[], skips:{}};
+const DEF_SETTINGS = {startBalance:0, startDate:todayIso(), goal:0, goals:{}, income:0, payday:25, limits:{}, recurring:[], skips:{}};
 const CAR_DEF = {name:"Occasion, z. B. Mazda MX-5 oder Suzuki Swift Sport", price:8000, reserve:2000, saved:0, start:"2026-08", wages:[850,1050,1584], rates:[100,350,700], inBudget:true};
 let S = structuredClone(DEF_SETTINGS), P = [], C = structuredClone(CAR_DEF), carStored = false, M = {}, apSeen = new Set(), lastBackup = 0, storeOk = true, T = {};
 
@@ -86,6 +86,8 @@ function cleanSettings(b) {
     startBalance:+b.startBalance || 0,
     startDate:isDate(b.startDate) ? b.startDate : todayIso(),
     goal:+b.goal || 0, income:+b.income || 0,
+    // Ziel pro Periode (Schlüssel = Starttag der Periode). Ein eigener Eintrag schlägt das Standardziel, 0 heisst «kein Ziel».
+    goals:Object.fromEntries(Object.entries(b.goals && typeof b.goals === "object" ? b.goals : {}).filter(([k, v]) => isDate(k) && !Number.isNaN(Date.parse(k)) && (typeof v === "number" ? Number.isFinite(v) : typeof v === "string" && v.trim() !== "" && Number.isFinite(+v)) && +v >= 0).map(([k, v]) => [k, r2(+v)])),
     payday:Math.min(Math.max(Math.round(+b.payday || 25), 1), 28),
     limits:Object.fromEntries(Object.entries(b.limits || {}).filter(([k, v]) => OUT.some(c => c.id === k) && +v > 0).map(([k, v]) => [k, +v])),
     recurring:Array.isArray(b.recurring) ? b.recurring.filter(r => r && r.name && +r.amount > 0).map(r => ({id:String(r.id || uid()), name:String(r.name).slice(0, 40), amount:r2(+r.amount), day:Math.min(Math.max(Math.round(+r.day || 1), 1), 28)})) : [],
@@ -131,6 +133,9 @@ function save({sync = true} = {}) {
 
 /* ---------- Perioden & Berechnung ---------- */
 const payday = () => S.payday;
+// Ziel einer Periode: eigenes Ziel, sonst das Standardziel aus «Mehr»
+const hasOwnGoal = per => !!(S.goals && Object.prototype.hasOwnProperty.call(S.goals, per.start));
+const goalFor = per => hasOwnGoal(per) ? (+S.goals[per.start] || 0) : (+S.goal || 0);
 function periodOf(s) {
   const d = D(s); let y = d.getFullYear(), m = d.getMonth();
   if (d.getDate() < payday()) { m--; if (m < 0) { m = 11; y--; } }
@@ -234,7 +239,8 @@ function facts(rows) { $("facts").innerHTML = rows.map(([k, v, c]) => `<div><dt>
 
 function renderHero() {
   heroBal = null; heroProjEnd = null; heroToday = null; heroDaily = null;
-  const today = todayIso(), per = periodOf(today), st = stats(per), total = budgetTotal(), goal = +S.goal || 0;
+  const today = todayIso(), per = periodOf(today), st = stats(per), total = budgetTotal(), goal = goalFor(per);
+  renderGoalRow();
   const elapsed = diff(per.start, today) + 1, left = per.days - elapsed + 1, after = per.days - elapsed;
   const outs = st.list.filter(p => isSpend(p) && p.date <= today);
   // «Nicht erfasst» stammt aus früheren Tagen und belastet nicht das heutige Tagesbudget
@@ -306,6 +312,53 @@ function renderHero() {
     ? [...head, ["Nach dem Lohn", chf(r2(projEnd + inc))], [(gap >= 0 ? "Über" : "Unter") + " deinem Ziel von " + chf(r2(goal + inc), {bare:true}).replace(/\.00$/, ""), chf(gap, {sign:true}), gap >= GOOD_MARGIN ? "good" : gap >= 0 ? "warn" : "bad"]]
     : [...head, ["Voraussichtlich am " + fmtDay(per.end), chf(projEnd), goal && projEnd < goal ? "bad" : ""], ["Dein Ziel", goal ? chf(goal) : "–"]]);
   renderRecon();
+}
+
+// Ziel der aktuellen Periode direkt auf «Heute» anzeigen und ändern
+let goalFormStart = null;   // Starttag der Periode, für die das Formular geöffnet wurde (gilt auch über Mitternacht)
+function renderGoalRow() {
+  const noSetup = !S.startBalance && !P.length, today = todayIso(), per = periodOf(today), goal = goalFor(per), inc = +S.income || 0;
+  const row = $("goalRow"); row.hidden = noSetup || !$("goalForm").hidden;
+  const range = fmtDay(per.start) + " – " + fmtDay(per.end), own = hasOwnGoal(per), early = !own && goal > 0 && diff(per.start, today) <= 4;
+  row.classList.toggle("attn", early);
+  $("goalLabel").textContent = early ? "Neue Periode, noch kein eigenes Ziel. Es gilt das Standardziel:" : `Kontoziel ${range}${goal > 0 && !own ? " (Standard)" : ""}`;
+  $("goalVal").textContent = goal > 0 ? `${chf(r2(goal + inc))} nach dem Lohn` : "noch nicht gesetzt";
+  $("goalEdit").textContent = goal > 0 ? "Ändern" : "Ziel setzen";
+  $("goalEdit").setAttribute("aria-label", (goal > 0 ? "Ziel ändern" : "Ziel setzen") + " für " + range);
+}
+function closeGoalForm(focus) {
+  goalFormStart = null; $("goalForm").hidden = true; $("gMsg").textContent = "";
+  $("gAmt").removeAttribute("aria-invalid"); $("gAmt").setAttribute("aria-describedby", "gHint");
+  renderGoalRow(); if (focus) $("goalEdit").focus();
+}
+function openGoalForm() {
+  const per = periodOf(todayIso()), goal = goalFor(per), inc = +S.income || 0, range = fmtDay(per.start) + " – " + fmtDay(per.end);
+  goalFormStart = per.start;
+  $("gAmt").value = goal > 0 ? r2(goal + inc).toFixed(2) : "";
+  $("gHint").textContent = `Kontostand, den du am ${fmtDay(addDays(per.end, 1))} direkt nach dem Lohn haben willst${inc > 0 ? ` (dein Lohn von ${chf(inc)} ist schon dabei)` : ""}. Gilt nur für ${range}.`;
+  $("gDefault").hidden = !hasOwnGoal(per);
+  $("gMsg").textContent = ""; $("gAmt").removeAttribute("aria-invalid"); $("gAmt").setAttribute("aria-describedby", "gHint");
+  clearTimeout(toastTimer); $("toast").hidden = true;   // sonst verdeckt die letzte Bestätigung die Knöpfe
+  $("goalForm").hidden = false; $("goalRow").hidden = true;
+  $("gAmt").focus(); $("gAmt").select();
+}
+function saveGoalForm(e) {
+  e.preventDefault();
+  const m = $("gMsg"), inc = +S.income || 0, raw = $("gAmt").value.trim(), v = raw === "" ? NaN : parseAmt(raw);
+  const bad = text => { $("gAmt").setAttribute("aria-invalid", "true"); $("gAmt").setAttribute("aria-describedby", "gHint gMsg"); m.className = "status err"; m.textContent = text; $("gAmt").focus(); };
+  if (Number.isNaN(v) || !(v > 0)) return bad("Bitte eine Zahl grösser als 0 eingeben, zum Beispiel 1200.");
+  if (inc > 0 && v <= inc) return bad(`Das Ziel nach dem Lohn muss höher sein als dein Lohn von ${chf(inc)}. Beispiel: ${chf(r2(inc + 300))}.`);
+  const start = goalFormStart || periodOf(todayIso()).start, per = periodOf(start), range = fmtDay(per.start) + " – " + fmtDay(per.end);
+  // Gespeichert wird das Ziel vor dem Lohn, eingegeben wird es nach dem Lohn (wie in «Mehr»)
+  S = {...S, goals:{...S.goals, [start]:r2(v - inc)}, ts:Date.now()};
+  if (!save()) return;
+  closeGoalForm(true); renderAll(); toast(`Ziel für ${range} gespeichert.`);
+}
+function resetGoalForm() {
+  const start = goalFormStart || periodOf(todayIso()).start, goals = {...S.goals}; delete goals[start];
+  S = {...S, goals, ts:Date.now()};
+  if (!save()) return;
+  closeGoalForm(true); renderAll(); toast("Standardziel gilt wieder.");
 }
 
 function reconSay(t) { $("reconLive").textContent = ""; setTimeout(() => { $("reconLive").textContent = t; }, 150); }
@@ -426,7 +479,7 @@ function renderVerlauf() {
   $("periodLabel").textContent = fmtDay(per.start) + " – " + fmtDay(per.end) + " " + D(per.end).getFullYear();
   $("todayP").hidden = isCur;
   $("nextP").disabled = isFuture;
-  const goal = +S.goal || 0, endBal = balanceAt(addDays(isPast ? per.end : today, 1));
+  const goal = goalFor(per), endBal = balanceAt(addDays(isPast ? per.end : today, 1));
   $("kpis").innerHTML = [
     ["Ausgaben", chf(st.out, {bare:true}), total && st.out > total ? "bad" : ""],
     ["Budget", total ? chf(total, {bare:true}) : "–", ""],
@@ -449,7 +502,7 @@ function renderVerlauf() {
   $("list").innerHTML = `<div class="list">${html}</div>`;
 }
 function renderInsights(per, st, o) {
-  const L = [], goal = +S.goal || 0;
+  const L = [], goal = goalFor(per);
   if (!st.list.length) { $("insights").innerHTML = ""; return; }
   OUT.forEach(c => {
     const lim = +S.limits[c.id] || 0, used = st.by[c.id] || 0; if (!lim) return;
@@ -494,7 +547,7 @@ function renderCharts(per, st, o) {
   if (!show || tab !== "verlauf") return;
   CW = Math.max(280, Math.min(600, Math.round($("chBal").clientWidth || 340)));
   const days = []; for (let d = per.start; d <= per.end; d = addDays(d, 1)) days.push(d);
-  const n = days.length, lastIdx = o.isCur ? Math.min(diff(per.start, o.today), n - 1) : n - 1, goal = +S.goal || 0;
+  const n = days.length, lastIdx = o.isCur ? Math.min(diff(per.start, o.today), n - 1) : n - 1, goal = goalFor(per);
   const early = P.filter(p => p.type === "in" && p.category === "lohn" && p.date > addDays(per.end, -EARLY_PAY_DAYS) && p.date <= per.end);
   const svRate = saveOn() ? saveInfo(per).rate : 0, openSave = d => Math.max(svRate - sum(st.list.filter(p => isSave(p) && p.date <= d)), 0);
   const bal = days.slice(0, lastIdx + 1).map(d => r2(balanceAt(addDays(d, 1)) - early.filter(p => p.date <= d).reduce((a, p) => a + p.amount, 0) - openSave(d)));
@@ -910,6 +963,13 @@ function bind() {
       wages:[0, 1, 2].map(i => num("cW" + i)), rates:[0, 1, 2].map(i => num("cR" + i))};
     carStored = true; save(); renderAll(); $("carEdit").open = false; $("carEdit").querySelector("summary").focus(); toast("Sparplan gespeichert.");
   };
+
+  // Ziel der aktuellen Periode
+  $("goalEdit").onclick = openGoalForm;
+  $("goalForm").addEventListener("submit", saveGoalForm);
+  $("gCancel").onclick = () => closeGoalForm(true);
+  $("gDefault").onclick = resetGoalForm;
+  $("goalForm").addEventListener("keydown", e => { if (e.key === "Escape") closeGoalForm(true); });
 
   // Einstellungen
   $("sBal").addEventListener("input", () => { $("sDate").value = todayIso(); });

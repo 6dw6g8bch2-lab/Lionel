@@ -103,6 +103,18 @@ p{margin:0}
 .big.bad{color:var(--bad)}
 .big.warn{color:var(--warn)}
 .hero-sub{font-size:.92rem}
+.goalrow{display:flex;align-items:center;justify-content:space-between;gap:4px 12px;font-size:.92rem}
+.goalrow .gtext{flex:1 1 0;min-width:0;display:flex;flex-direction:column}
+.goalrow .gl{color:var(--muted);font-size:.85rem}
+.goalrow .gv{font-weight:650;white-space:nowrap}
+.goalrow .linkbtn{flex:none;font-size:.95rem}
+.goalrow.attn{background:var(--surface);border-radius:12px;padding:8px 8px 8px 12px}
+.goalrow.attn .gl{color:var(--fg)}
+.goaledit{display:grid;gap:8px;border-top:1px solid color-mix(in srgb,var(--fg) 10%,transparent);padding-top:10px}
+.goaledit .amount{background:var(--surface);min-height:44px;border-color:color-mix(in srgb,var(--fg) 50%,var(--surface))}
+.goaledit .amount input{font-size:1.3rem}
+.goaledit .hint{margin:0}
+.goaledit .status:empty{display:none}
 .hero{padding-bottom:8px}
 .hero .pill{background:var(--surface)}
 .top .pill.neutral{background:var(--surface);border:1px solid var(--line)}
