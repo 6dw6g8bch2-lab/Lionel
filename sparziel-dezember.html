@@ -1,16 +1,18 @@
 <title>Sparziel Dezember</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>
-/* Layout: eine Spalte. Oben die Gesamtübersicht, dann drei Töpfe, dann Formular, dann Verlauf. */
+/* Layout: eine Spalte. Oben die Gesamtübersicht, dann das Formular, dann die drei Töpfe, dann der Verlauf. */
 :root {
   --bg: #f3f6f9;
   --surface: #ffffff;
   --ink: #14202b;
   --muted: #4d5f70;
   --line: #d6dee6;
+  --field-border: #66788a;
   --track: #e2e8ee;
   --accent: #0b5f8a;
   --accent-ink: #ffffff;
+  --total: #14202b;
   --pot-zimmer: #1f6feb;
   --pot-ferien: #b36b00;
   --pot-allgemein: #1d8a5f;
@@ -18,6 +20,8 @@
   --good-ink: #0f5f3c;
   --warn-bg: #fbe9c8;
   --warn-ink: #7a4800;
+  --neutral-bg: #e4eaf0;
+  --neutral-ink: #2c3e50;
   --bad: #a3321f;
   --font-display: "Space Grotesk", system-ui, sans-serif;
   --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -25,17 +29,19 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #0e151b; --surface: #16202a; --ink: #e8eef3; --muted: #9db0c0;
-    --line: #2a3844; --track: #26333f; --accent: #5fb3e6; --accent-ink: #08202e;
+    --line: #2a3844; --field-border: #7d91a3; --track: #26333f; --accent: #5fb3e6; --accent-ink: #08202e; --total: #e8eef3;
     --pot-zimmer: #5b9bff; --pot-ferien: #f0a63a; --pot-allgemein: #4cc38f;
     --good-bg: #153a29; --good-ink: #8fe0b8; --warn-bg: #3d2b0b; --warn-ink: #f2c777;
+    --neutral-bg: #25323f; --neutral-ink: #cdd9e4;
     --bad: #ff8d7a; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #0e151b; --surface: #16202a; --ink: #e8eef3; --muted: #9db0c0;
-  --line: #2a3844; --track: #26333f; --accent: #5fb3e6; --accent-ink: #08202e;
+  --line: #2a3844; --field-border: #7d91a3; --track: #26333f; --accent: #5fb3e6; --accent-ink: #08202e; --total: #e8eef3;
   --pot-zimmer: #5b9bff; --pot-ferien: #f0a63a; --pot-allgemein: #4cc38f;
   --good-bg: #153a29; --good-ink: #8fe0b8; --warn-bg: #3d2b0b; --warn-ink: #f2c777;
+  --neutral-bg: #25323f; --neutral-ink: #cdd9e4;
   --bad: #ff8d7a; color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -50,47 +56,51 @@ h1, h2 { font-family: var(--font-display); margin: 0; text-wrap: balance; }
 .eyebrow { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
 .num { font-variant-numeric: tabular-nums; }
 
-.hero { display: flex; flex-direction: column; gap: 14px; padding-block: 8px 0; }
+.hero { display: flex; flex-direction: column; gap: 12px; padding-block: 8px 0; }
 .hero h1 { font-size: 1.9rem; line-height: 1.15; }
-.total-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
 .total { font-family: var(--font-display); font-size: 2.8rem; font-weight: 700; line-height: 1; }
-.of { color: var(--muted); font-size: 1.05rem; }
-.bar { height: 14px; border-radius: 7px; background: var(--track); overflow: hidden; }
-.bar > span { display: block; height: 100%; width: 0; border-radius: 7px; background: var(--accent); transition: width .4s ease; }
-.facts { display: flex; flex-wrap: wrap; gap: 8px 20px; color: var(--muted); font-size: 0.95rem; }
+.of { display: block; color: var(--muted); font-size: 1.05rem; margin-top: 4px; }
+.bar { height: 14px; border-radius: 7px; background: var(--track); border: 1px solid var(--field-border); overflow: hidden; }
+.bar > span { display: block; height: 100%; width: 0; background: var(--accent); transition: width .4s ease; }
+.hero .bar > span { background: var(--total); }
+.facts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; color: var(--muted); font-size: 0.95rem; }
 .facts strong { color: var(--ink); font-weight: 600; }
 .pill { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 0.85rem; font-weight: 600; }
 .pill.good { background: var(--good-bg); color: var(--good-ink); }
 .pill.warn { background: var(--warn-bg); color: var(--warn-ink); }
+.pill.neutral { background: var(--neutral-bg); color: var(--neutral-ink); }
 
 .pots { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
-.pot { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.pot { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.pot-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .pot h2 { font-size: 1.05rem; }
-.pot .amount { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; }
+.pot .amount { font-family: var(--font-display); font-size: 1.3rem; font-weight: 700; }
 .pot .goal { color: var(--muted); font-size: 0.9rem; }
-.pot .bar { height: 10px; }
+.pot .bar { height: 12px; }
 .pot[data-pot="zimmer"] .bar > span { background: var(--pot-zimmer); }
 .pot[data-pot="ferien"] .bar > span { background: var(--pot-ferien); }
 .pot[data-pot="allgemein"] .bar > span { background: var(--pot-allgemein); }
 
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 14px; }
 .card h2 { font-size: 1.15rem; }
-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; align-items: end; }
+form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: end; }
 .field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 label { font-size: 0.85rem; font-weight: 600; color: var(--muted); }
 input, select {
   font: inherit; color: var(--ink); background: var(--bg);
-  border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; min-height: 44px; width: 100%;
+  border: 1px solid var(--field-border); border-radius: 8px; padding: 10px 12px; min-height: 44px; width: 100%;
 }
 button { font: inherit; cursor: pointer; min-height: 44px; border-radius: 8px; border: 1px solid transparent; padding: 10px 18px; font-weight: 600; }
-button.primary { background: var(--accent); color: var(--accent-ink); }
+button.primary { background: var(--accent); color: var(--accent-ink); grid-column: 1 / -1; min-height: 48px; }
 button.primary:disabled { opacity: 0.6; cursor: default; }
-button.ghost { background: transparent; color: var(--muted); border-color: var(--line); padding: 6px 12px; min-height: 36px; font-weight: 500; }
+button.ghost { background: transparent; color: var(--muted); border-color: var(--field-border); padding: 6px 12px; min-height: 44px; font-weight: 500; }
 button.ghost.confirm { color: var(--bad); border-color: var(--bad); }
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-.note-field { grid-column: 1 / -1; }
-.msg { min-height: 1.4em; font-size: 0.9rem; color: var(--muted); margin: 0; }
-.msg.err { color: var(--bad); }
+.msg { font-size: 0.95rem; color: var(--muted); margin: 0; }
+.msg:empty { display: none; }
+.msg.ok { background: var(--good-bg); color: var(--good-ink); padding: 10px 12px; border-radius: 8px; font-weight: 500; }
+.msg.err { color: var(--bad); font-weight: 500; }
+.notice { margin: 0; background: var(--warn-bg); color: var(--warn-ink); padding: 10px 12px; border-radius: 8px; font-size: 0.95rem; }
 
 ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 li { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 12px 0; border-top: 1px solid var(--line); }
@@ -101,6 +111,7 @@ li .meta { font-size: 0.85rem; color: var(--muted); }
 li .cash { font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; }
 .empty { color: var(--muted); margin: 0; }
 .status { font-size: 0.85rem; color: var(--muted); margin: 0; }
+.status:empty { display: none; }
 @media (prefers-reduced-motion: reduce) { .bar > span { transition: none; } }
 </style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
@@ -109,41 +120,21 @@ li .cash { font-family: var(--font-display); font-weight: 700; font-size: 1.1rem
   <header class="hero">
     <div class="eyebrow">Bis 31. Dezember 2026</div>
     <h1>Sparziel Dezember</h1>
-    <div class="total-row">
-      <span class="total num" id="total">CHF 0.00</span>
-      <span class="of num" id="of">von CHF 200.00</span>
+    <div>
+      <span class="total num" id="total">CHF 0</span>
+      <span class="of num" id="of">von CHF 200</span>
     </div>
     <div class="bar" role="progressbar" aria-label="Gesamtfortschritt" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="totalBar"><span id="totalFill"></span></div>
-    <div class="facts" aria-live="polite">
-      <span id="pace" class="pill warn">Noch keine Einzahlung</span>
-      <span>Noch <strong class="num" id="days">–</strong> Tage</span>
-      <span>Dafür nötig: <strong class="num" id="perWeek">–</strong> pro Woche</span>
+    <div class="facts" aria-live="polite" aria-atomic="true">
+      <span id="pace" class="pill neutral">Noch keine Einzahlung</span>
+      <span id="days">–</span>
+      <span id="perWeek">–</span>
     </div>
   </header>
 
-  <section class="pots" aria-label="Töpfe">
-    <article class="pot" data-pot="zimmer">
-      <h2>Zimmer</h2>
-      <div class="amount num" data-amount>CHF 0.00</div>
-      <div class="bar" role="progressbar" aria-label="Fortschritt Zimmer" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span></div>
-      <div class="goal num" data-goal>Ziel CHF 100.00</div>
-    </article>
-    <article class="pot" data-pot="ferien">
-      <h2>Ferien</h2>
-      <div class="amount num" data-amount>CHF 0.00</div>
-      <div class="bar" role="progressbar" aria-label="Fortschritt Ferien" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span></div>
-      <div class="goal num" data-goal>Ziel CHF 50.00</div>
-    </article>
-    <article class="pot" data-pot="allgemein">
-      <h2>Allgemein</h2>
-      <div class="amount num" data-amount>CHF 0.00</div>
-      <div class="bar" role="progressbar" aria-label="Fortschritt Allgemein" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span></div>
-      <div class="goal num" data-goal>Ziel CHF 50.00</div>
-    </article>
-  </section>
-
   <section class="card" aria-labelledby="formTitle">
     <h2 id="formTitle">Einzahlung eintragen</h2>
+    <p class="notice" id="notice" hidden>Speichern ist hier nicht verfügbar. Deine Einträge gehen verloren, sobald du die Seite schliesst.</p>
     <form id="form" autocomplete="off">
       <div class="field">
         <label for="amount">Betrag in CHF</label>
@@ -151,28 +142,26 @@ li .cash { font-family: var(--font-display); font-weight: 700; font-size: 1.1rem
       </div>
       <div class="field">
         <label for="pot">Topf</label>
-        <select id="pot">
-          <option value="zimmer">Zimmer</option>
-          <option value="ferien">Ferien</option>
-          <option value="allgemein">Allgemein</option>
-        </select>
+        <select id="pot"></select>
       </div>
       <div class="field">
         <label for="date">Datum</label>
-        <input id="date" type="date" required>
+        <input id="date" type="date" min="2026-11-01" max="2026-12-31" required>
       </div>
-      <div class="field note-field">
+      <div class="field">
         <label for="note">Notiz (optional)</label>
-        <input id="note" maxlength="80" placeholder="z. B. Lohn, Dauerauftrag, Rest vom Monat">
+        <input id="note" maxlength="80" placeholder="z. B. Lohn">
       </div>
-      <button class="primary" id="submit" type="submit">Einzahlen</button>
+      <button class="primary" id="submit" type="submit" disabled>Eintragen</button>
     </form>
     <p class="msg" id="msg" role="status" aria-live="polite"></p>
   </section>
 
+  <section class="pots" id="pots" aria-label="Töpfe"></section>
+
   <section class="card" aria-labelledby="listTitle">
     <h2 id="listTitle">Verlauf</h2>
-    <p class="empty" id="empty">Noch keine Einzahlung. Trag oben deine erste ein, zum Beispiel 40.– für diese Woche.</p>
+    <p class="empty" id="empty">Noch keine Einzahlung. Trag oben deine erste ein, zum Beispiel 40 Franken für diese Woche.</p>
     <ul id="list"></ul>
     <p class="status" id="status" role="status" aria-live="polite"></p>
   </section>
@@ -180,140 +169,237 @@ li .cash { font-family: var(--font-display); font-weight: 700; font-size: 1.1rem
 
 <script>
 (function () {
-  var POTS = { zimmer: { name: "Zimmer", goal: 10000 }, ferien: { name: "Ferien", goal: 5000 }, allgemein: { name: "Allgemein", goal: 5000 } };
+  var POTS = {
+    zimmer:    { name: "Zimmer",    goal: 10000 },
+    ferien:    { name: "Ferien",    goal: 5000 },
+    allgemein: { name: "Allgemein", goal: 5000 }
+  };
+  var POT_KEYS = Object.keys(POTS);
   var TOTAL_GOAL = 20000;
-  var START = new Date(2026, 10, 26);          // 26. Nov 2026 (Monat ist 0-basiert)
-  var DEADLINE = new Date(2026, 11, 31, 23, 59, 59);
+  var MIN_CENTS = 5, MAX_CENTS = 100000;
+  var MIN_DATE = "2026-11-01", MAX_DATE = "2026-12-31";
+  var START = new Date(2026, 10, 26);
+  var END = new Date(2026, 11, 31);
   var DAY = 86400000;
+  var WEEK_CENTS = Math.round(TOTAL_GOAL / 5);   // Tempo: Ziel in fünf Wochen
 
-  var items = [];                 // { id, cents, pot, note, date, createdAt }
-  var coll = null;                // Firestore-artige Sammlung oder null
+  var items = [];
+  var coll = null;
   var persistent = false;
+  var localCounter = 0;
+  var attempt = null;             // { sig, ref, createdAt } für eine erneute Eingabe ohne Duplikat
+  var lastSum = 0, lastByPot = {};
 
   var $ = function (id) { return document.getElementById(id); };
-  function chf(cents) { return "CHF " + (cents / 100).toLocaleString("de-CH", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function isPot(k) { return POT_KEYS.indexOf(k) !== -1; }
+  function chf(c) {
+    return "CHF " + (c % 100 === 0
+      ? (c / 100).toLocaleString("de-CH")
+      : (c / 100).toLocaleString("de-CH", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+  }
   function pad(n) { return (n < 10 ? "0" : "") + n; }
-  function todayStr() { var d = new Date(); return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+  function ymd(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+  function dayNum(d) { return Math.round(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / DAY); }
   function niceDate(s) { var p = String(s).split("-"); return p.length === 3 ? p[2] + "." + p[1] + "." + p[0] : s; }
-  function setMsg(t, err) { var m = $("msg"); m.textContent = t; m.className = "msg" + (err ? " err" : ""); }
+  function setMsg(t, kind) { var m = $("msg"); m.textContent = t; m.className = "msg" + (kind ? " " + kind : ""); }
+  function parseCents(s) {
+    var t = String(s).trim().replace(/['’\s]/g, "");
+    var m = /^(?:CHF)?(\d+)(?:[.,](\d{1,2}))?(?:\.?[–-])?$/i.exec(t);
+    if (!m) return null;
+    return Number(m[1]) * 100 + Number((m[2] || "0").padEnd(2, "0"));
+  }
+  function pct(part, whole) {
+    if (part <= 0) return 0;
+    if (part >= whole) return 100;
+    return Math.min(99, Math.max(1, Math.floor(part / whole * 100)));
+  }
+  function save(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+
+  // Töpfe und Auswahl aus POTS aufbauen
+  var potEls = {};
+  POT_KEYS.forEach(function (k) {
+    var art = document.createElement("article"); art.className = "pot"; art.setAttribute("data-pot", k);
+    var head = document.createElement("div"); head.className = "pot-head";
+    var h = document.createElement("h2"); h.textContent = POTS[k].name;
+    var amt = document.createElement("span"); amt.className = "amount num"; amt.textContent = chf(0);
+    head.appendChild(h); head.appendChild(amt);
+    var bar = document.createElement("div"); bar.className = "bar"; bar.setAttribute("role", "progressbar");
+    bar.setAttribute("aria-label", "Fortschritt " + POTS[k].name);
+    bar.setAttribute("aria-valuemin", "0"); bar.setAttribute("aria-valuemax", "100"); bar.setAttribute("aria-valuenow", "0");
+    var fill = document.createElement("span"); bar.appendChild(fill);
+    var goal = document.createElement("div"); goal.className = "goal num";
+    art.appendChild(head); art.appendChild(bar); art.appendChild(goal);
+    $("pots").appendChild(art);
+    potEls[k] = { amt: amt, bar: bar, fill: fill, goal: goal };
+    var opt = document.createElement("option"); opt.value = k; opt.textContent = POTS[k].name;
+    $("pot").appendChild(opt);
+  });
+  var savedPot = load("sparziel-topf");
+  if (savedPot && isPot(savedPot)) $("pot").value = savedPot;
 
   function render() {
-    var sum = 0, byPot = { zimmer: 0, ferien: 0, allgemein: 0 };
-    items.forEach(function (it) { sum += it.cents; if (byPot[it.pot] !== undefined) byPot[it.pot] += it.cents; });
+    var sum = 0, byPot = {};
+    POT_KEYS.forEach(function (k) { byPot[k] = 0; });
+    items.forEach(function (it) { sum += it.cents; byPot[isPot(it.pot) ? it.pot : "allgemein"] += it.cents; });
+    lastSum = sum; lastByPot = byPot;
 
     $("total").textContent = chf(sum);
     $("of").textContent = "von " + chf(TOTAL_GOAL);
-    var pct = Math.min(100, Math.round(sum / TOTAL_GOAL * 100));
-    $("totalFill").style.width = pct + "%";
-    $("totalBar").setAttribute("aria-valuenow", String(pct));
+    var p = pct(sum, TOTAL_GOAL);
+    $("totalFill").style.width = p + "%";
+    $("totalBar").setAttribute("aria-valuenow", String(p));
+    $("totalBar").setAttribute("aria-valuetext", chf(sum) + " von " + chf(TOTAL_GOAL));
 
     var now = new Date();
-    var daysLeft = Math.max(0, Math.ceil((DEADLINE - now) / DAY));
+    var daysLeft = Math.max(0, dayNum(END) - dayNum(now));
     var remaining = Math.max(0, TOTAL_GOAL - sum);
-    $("days").textContent = String(daysLeft);
-    if (remaining === 0) {
-      $("perWeek").textContent = "nichts mehr";
-    } else if (daysLeft === 0) {
-      $("perWeek").textContent = chf(remaining) + " fehlen";
-    } else {
+    $("days").textContent = daysLeft === 0 ? "Heute ist der letzte Tag" : "Noch " + daysLeft + (daysLeft === 1 ? " Tag" : " Tage");
+    if (remaining === 0) $("perWeek").textContent = "Nichts mehr nötig";
+    else if (daysLeft === 0) $("perWeek").textContent = "Es fehlen noch " + chf(remaining);
+    else {
       var weeks = Math.max(1, Math.ceil(daysLeft / 7));
-      $("perWeek").textContent = chf(Math.ceil(remaining / weeks));
+      $("perWeek").textContent = "Pro Woche nötig: ca. " + chf(Math.ceil(remaining / weeks / 100) * 100);
     }
 
     var pace = $("pace");
-    var elapsed = Math.min(1, Math.max(0, (now - START) / (DEADLINE - START)));
-    var expected = Math.round(TOTAL_GOAL * elapsed);
+    var span = dayNum(END) - dayNum(START);
+    var elapsed = Math.min(1, Math.max(0, (dayNum(now) - dayNum(START)) / span));
+    var behind = Math.round(TOTAL_GOAL * elapsed) - sum;
     if (remaining === 0) { pace.textContent = "Ziel erreicht"; pace.className = "pill good"; }
-    else if (sum >= expected && sum > 0) { pace.textContent = "Im Plan"; pace.className = "pill good"; }
-    else if (sum === 0) { pace.textContent = "Noch keine Einzahlung"; pace.className = "pill warn"; }
-    else { pace.textContent = "Etwas hinterher: Soll " + chf(expected); pace.className = "pill warn"; }
+    else if (behind > WEEK_CENTS) { pace.textContent = "Du liegst " + chf(behind) + " hinter dem Plan"; pace.className = "pill warn"; }
+    else if (sum === 0) { pace.textContent = "Noch keine Einzahlung"; pace.className = "pill neutral"; }
+    else if (behind <= 0) { pace.textContent = "Im Plan"; pace.className = "pill good"; }
+    else { pace.textContent = "Auf Kurs"; pace.className = "pill neutral"; }
 
-    Object.keys(POTS).forEach(function (k) {
-      var el = document.querySelector('.pot[data-pot="' + k + '"]');
-      var p = Math.min(100, Math.round(byPot[k] / POTS[k].goal * 100));
-      el.querySelector("[data-amount]").textContent = chf(byPot[k]);
-      el.querySelector("[data-goal]").textContent = byPot[k] >= POTS[k].goal ? "Ziel erreicht (" + chf(POTS[k].goal) + ")" : "Ziel " + chf(POTS[k].goal);
-      el.querySelector(".bar > span").style.width = p + "%";
-      el.querySelector(".bar").setAttribute("aria-valuenow", String(p));
+    POT_KEYS.forEach(function (k) {
+      var e = potEls[k], left = Math.max(0, POTS[k].goal - byPot[k]), pp = pct(byPot[k], POTS[k].goal);
+      e.amt.textContent = chf(byPot[k]);
+      e.goal.textContent = left === 0 ? "Voll (Ziel " + chf(POTS[k].goal) + ")" : "Noch " + chf(left) + " bis " + chf(POTS[k].goal);
+      e.fill.style.width = pp + "%";
+      e.bar.setAttribute("aria-valuenow", String(pp));
+      e.bar.setAttribute("aria-valuetext", chf(byPot[k]) + " von " + chf(POTS[k].goal));
+      var opt = $("pot").querySelector('option[value="' + k + '"]');
+      opt.textContent = POTS[k].name + (left === 0 ? " (voll)" : " (noch " + chf(left) + ")");
     });
 
     var list = $("list");
     list.textContent = "";
     $("empty").hidden = items.length > 0;
     items.forEach(function (it) {
+      var potName = POTS[isPot(it.pot) ? it.pot : "allgemein"].name;
       var li = document.createElement("li");
       var what = document.createElement("div"); what.className = "what";
-      var t = document.createElement("span");
-      t.textContent = (POTS[it.pot] ? POTS[it.pot].name : "Allgemein") + (it.note ? " · " + it.note : "");
+      var t = document.createElement("span"); t.textContent = potName + (it.note ? " · " + it.note : "");
       var meta = document.createElement("span"); meta.className = "meta num"; meta.textContent = niceDate(it.date);
       what.appendChild(t); what.appendChild(meta);
       var cash = document.createElement("span"); cash.className = "cash num"; cash.textContent = chf(it.cents);
       var del = document.createElement("button");
-      del.type = "button"; del.className = "ghost"; del.textContent = "Löschen";
-      del.setAttribute("aria-label", "Einzahlung vom " + niceDate(it.date) + " löschen");
+      var baseLabel = "Einzahlung vom " + niceDate(it.date) + " über " + chf(it.cents) + " löschen";
+      del.type = "button"; del.className = "ghost"; del.textContent = "Löschen"; del.setAttribute("aria-label", baseLabel);
       var armed = null;
       del.addEventListener("click", function () {
         if (!armed) {
           del.textContent = "Wirklich löschen?"; del.classList.add("confirm");
-          armed = setTimeout(function () { armed = null; del.textContent = "Löschen"; del.classList.remove("confirm"); }, 3500);
+          del.setAttribute("aria-label", "Wirklich löschen? " + baseLabel);
+          armed = setTimeout(function () { armed = null; del.textContent = "Löschen"; del.classList.remove("confirm"); del.setAttribute("aria-label", baseLabel); }, 5000);
           return;
         }
         clearTimeout(armed); armed = null; del.disabled = true;
-        removeItem(it);
+        removeItem(it, potName);
       });
       li.appendChild(what); li.appendChild(cash); li.appendChild(del);
       list.appendChild(li);
     });
   }
 
-  function removeItem(it) {
+  function removeItem(it, potName) {
+    var okMsg = "Gelöscht: " + chf(it.cents) + " aus " + potName + ".";
     if (persistent && coll) {
-      coll.doc(it.id).delete().catch(function () { setMsg("Löschen hat nicht geklappt. Versuch es nochmal.", true); render(); });
+      coll.doc(it.id).delete().then(function () { setMsg(okMsg, ""); })
+        .catch(function () { setMsg("Löschen hat nicht geklappt. Versuch es nochmal.", "err"); render(); });
     } else {
       items = items.filter(function (x) { return x.id !== it.id; });
-      render();
+      render(); setMsg(okMsg, "");
     }
   }
 
-  $("date").value = todayStr();
+  function clampDate(s) { return s < MIN_DATE ? MIN_DATE : (s > MAX_DATE ? MAX_DATE : s); }
+  $("date").value = clampDate(ymd(new Date()));
+
   $("form").addEventListener("submit", function (e) {
     e.preventDefault();
-    var raw = $("amount").value.trim().replace(",", ".").replace(/^CHF\s*/i, "");
-    var val = Number(raw);
-    if (!raw || !isFinite(val) || val <= 0 || val > 10000) { setMsg("Bitte gib einen Betrag zwischen 0.05 und 10000 ein.", true); $("amount").focus(); return; }
-    var cents = Math.round(val * 100);
-    if (cents < 5) { setMsg("Bitte gib einen Betrag zwischen 0.05 und 10000 ein.", true); $("amount").focus(); return; }
-    var rec = { cents: cents, pot: $("pot").value, note: $("note").value.trim().slice(0, 80), date: $("date").value || todayStr(), createdAt: Date.now() };
-    var btn = $("submit"); btn.disabled = true; setMsg("");
-    function done() { btn.disabled = false; $("amount").value = ""; $("note").value = ""; setMsg("Gespeichert: " + chf(cents) + " in " + POTS[rec.pot].name + "."); $("amount").focus(); }
+    var cents = parseCents($("amount").value);
+    if (cents === null || cents < MIN_CENTS || cents > MAX_CENTS) {
+      setMsg("Nur Zahlen von 0.05 bis 1000, zum Beispiel 40 oder 12,50.", "err"); $("amount").focus(); return;
+    }
+    var date = $("date").value;
+    if (!/^\d{4}-\d\d-\d\d$/.test(date) || date < MIN_DATE || date > MAX_DATE) {
+      setMsg("Wähle ein Datum zwischen 1. November und 31. Dezember 2026.", "err"); $("date").focus(); return;
+    }
+    var pot = isPot($("pot").value) ? $("pot").value : "allgemein";
+    var rec = { cents: cents, pot: pot, note: $("note").value.trim().slice(0, 80), date: date, createdAt: Date.now() };
+    var btn = $("submit"); btn.disabled = true; setMsg("", "");
+    save("sparziel-topf", pot);
+
+    function success() {
+      var after = lastSum + cents, potAfter = (lastByPot[pot] || 0) + cents;
+      var left = Math.max(0, TOTAL_GOAL - after);
+      var text = "Eingetragen: " + chf(cents) + " in " + POTS[pot].name + ". " + (left === 0 ? "Gesamtziel erreicht." : "Noch " + chf(left) + " bis zum Ziel.");
+      if (potAfter > POTS[pot].goal) text += " Der Topf " + POTS[pot].name + " ist damit voll.";
+      btn.disabled = false; $("amount").value = ""; $("note").value = ""; setMsg(text, "ok"); $("amount").focus();
+    }
+
     if (persistent && coll) {
-      coll.add(rec).then(done).catch(function () { btn.disabled = false; setMsg("Speichern hat nicht geklappt. Prüf die Verbindung und versuch es nochmal.", true); });
+      var sig = [cents, pot, date, rec.note].join("|");
+      if (!attempt || attempt.sig !== sig) attempt = { sig: sig, ref: coll.doc(), createdAt: rec.createdAt };
+      rec.createdAt = attempt.createdAt;
+      var slow = setTimeout(function () {
+        btn.disabled = false;
+        setMsg("Das dauert länger als üblich. Prüf die Verbindung. Du kannst es nochmal versuchen, es wird nicht doppelt eingetragen.", "err");
+      }, 15000);
+      attempt.ref.set(rec).then(function () { clearTimeout(slow); attempt = null; success(); }).catch(function (err) {
+        clearTimeout(slow); btn.disabled = false;
+        var code = err && err.code;
+        if (code === "quota_exceeded") { attempt = null; setMsg("Der Speicher ist voll. Lösch alte Einträge und versuch es nochmal.", "err"); }
+        else if (code === "invalid_argument" || code === "revoked") { attempt = null; setMsg("Du hast hier keine Schreibrechte. Öffne die Seite mit deinem Konto.", "err"); }
+        else setMsg("Speichern hat nicht geklappt. Prüf die Verbindung und versuch es nochmal.", "err");
+      });
     } else {
-      rec.id = "local-" + rec.createdAt; items.unshift(rec); render(); done();
+      rec.id = "local-" + (++localCounter); items.unshift(rec); render(); success();
     }
   });
 
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) render(); });
   render();
 
   // Speicher: privater Bereich des Viewers in der Datenbank
+  function noStorage() {
+    $("notice").hidden = false;
+    $("submit").disabled = false;
+  }
   (async function () {
     var status = $("status");
     try {
-      if (!window.claude || !window.claude.use) { status.textContent = "Speichern ist hier nicht verfügbar. Einträge gehen beim Schliessen verloren."; return; }
+      if (!window.claude || !window.claude.use) { noStorage(); return; }
       var results = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
       var db = results[0], user = results[1];
       var uid = user ? await user.id() : null;
-      if (!db || !uid) { status.textContent = "Speichern ist hier nicht verfügbar. Einträge gehen beim Schliessen verloren."; return; }
+      if (!db || !uid) { noStorage(); return; }
       coll = db.doc("data/users/" + uid + "/profile").collection("deposits");
       persistent = true;
+      $("submit").disabled = false;
       var timer = setTimeout(function () { status.textContent = "Die gespeicherten Einzahlungen sind gerade nicht erreichbar. Angezeigt wird der letzte bekannte Stand."; }, 10000);
       coll.orderBy("createdAt", "desc").limit(500).onSnapshot(function (snap) {
         if (!snap.metadata.fromCache) { clearTimeout(timer); status.textContent = ""; }
-        items = snap.docs.map(function (d) { var x = d.data() || {}; return { id: d.id, cents: Number(x.cents) || 0, pot: x.pot, note: String(x.note || ""), date: String(x.date || ""), createdAt: Number(x.createdAt) || 0 }; });
+        items = snap.docs.map(function (d) {
+          var x = d.data() || {};
+          return { id: d.id, cents: Number(x.cents) || 0, pot: String(x.pot || ""), note: String(x.note || ""), date: String(x.date || ""), createdAt: Number(x.createdAt) || 0 };
+        });
         render();
       }, function () { clearTimeout(timer); status.textContent = "Der Speicher ist gerade nicht erreichbar."; });
     } catch (err) {
-      status.textContent = "Speichern ist hier nicht verfügbar. Einträge gehen beim Schliessen verloren.";
+      noStorage();
     }
   })();
 })();
