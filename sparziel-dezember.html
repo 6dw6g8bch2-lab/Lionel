@@ -1,7 +1,7 @@
 <title>Sparziel Dezember</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>
-/* Layout: eine Spalte. Oben die Gesamtübersicht, dann das Formular, dann die drei Töpfe, dann der Verlauf. */
+/* Layout: eine Spalte. Oben das gewählte Sparziel mit Fortschritt, darunter die Zielauswahl, dann Einzahlung und Verlauf. */
 :root {
   --bg: #f3f6f9;
   --surface: #ffffff;
@@ -13,9 +13,6 @@
   --accent: #0b5f8a;
   --accent-ink: #ffffff;
   --total: #14202b;
-  --pot-zimmer: #1f6feb;
-  --pot-ferien: #b36b00;
-  --pot-allgemein: #1d8a5f;
   --good-bg: #dcf2e6;
   --good-ink: #0f5f3c;
   --warn-bg: #fbe9c8;
@@ -30,7 +27,6 @@
   :root:not([data-theme="light"]) {
     --bg: #0e151b; --surface: #16202a; --ink: #e8eef3; --muted: #9db0c0;
     --line: #2a3844; --field-border: #7d91a3; --track: #26333f; --accent: #5fb3e6; --accent-ink: #08202e; --total: #e8eef3;
-    --pot-zimmer: #5b9bff; --pot-ferien: #f0a63a; --pot-allgemein: #4cc38f;
     --good-bg: #153a29; --good-ink: #8fe0b8; --warn-bg: #3d2b0b; --warn-ink: #f2c777;
     --neutral-bg: #25323f; --neutral-ink: #cdd9e4;
     --bad: #ff8d7a; color-scheme: dark;
@@ -39,7 +35,6 @@
 :root[data-theme="dark"] {
   --bg: #0e151b; --surface: #16202a; --ink: #e8eef3; --muted: #9db0c0;
   --line: #2a3844; --field-border: #7d91a3; --track: #26333f; --accent: #5fb3e6; --accent-ink: #08202e; --total: #e8eef3;
-  --pot-zimmer: #5b9bff; --pot-ferien: #f0a63a; --pot-allgemein: #4cc38f;
   --good-bg: #153a29; --good-ink: #8fe0b8; --warn-bg: #3d2b0b; --warn-ink: #f2c777;
   --neutral-bg: #25323f; --neutral-ink: #cdd9e4;
   --bad: #ff8d7a; color-scheme: dark;
@@ -55,46 +50,44 @@ main { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; 
 h1, h2 { font-family: var(--font-display); margin: 0; text-wrap: balance; }
 .eyebrow { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
 .num { font-variant-numeric: tabular-nums; }
+[hidden] { display: none !important; }
 
 .hero { display: flex; flex-direction: column; gap: 12px; padding-block: 8px 0; }
-.hero h1 { font-size: 1.9rem; line-height: 1.15; }
+.hero h1 { font-size: 1.9rem; line-height: 1.15; overflow-wrap: anywhere; }
 .total { font-family: var(--font-display); font-size: 2.8rem; font-weight: 700; line-height: 1; }
 .of { display: block; color: var(--muted); font-size: 1.05rem; margin-top: 4px; }
 .bar { height: 14px; border-radius: 7px; background: var(--track); border: 1px solid var(--field-border); overflow: hidden; }
-.bar > span { display: block; height: 100%; width: 0; background: var(--accent); transition: width .4s ease; }
-.hero .bar > span { background: var(--total); }
+.bar > span { display: block; height: 100%; width: 0; background: var(--total); transition: width .4s ease; }
 .facts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; color: var(--muted); font-size: 0.95rem; }
-.facts strong { color: var(--ink); font-weight: 600; }
 .pill { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 0.85rem; font-weight: 600; }
 .pill.good { background: var(--good-bg); color: var(--good-ink); }
 .pill.warn { background: var(--warn-bg); color: var(--warn-ink); }
 .pill.neutral { background: var(--neutral-bg); color: var(--neutral-ink); }
+.lead { margin: 0; color: var(--muted); }
 
-.pots { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
-.pot { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-.pot-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-.pot h2 { font-size: 1.05rem; }
-.pot .amount { font-family: var(--font-display); font-size: 1.3rem; font-weight: 700; }
-.pot .goal { color: var(--muted); font-size: 0.9rem; }
-.pot .bar { height: 12px; }
-.pot[data-pot="zimmer"] .bar > span { background: var(--pot-zimmer); }
-.pot[data-pot="ferien"] .bar > span { background: var(--pot-ferien); }
-.pot[data-pot="allgemein"] .bar > span { background: var(--pot-allgemein); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { background: var(--surface); color: var(--ink); border: 1px solid var(--field-border); border-radius: 999px; padding: 8px 16px; min-height: 44px; font-weight: 500; max-width: 100%; overflow-wrap: anywhere; text-align: left; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.chip.add { border-style: dashed; color: var(--accent); font-weight: 600; }
 
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 14px; }
 .card h2 { font-size: 1.15rem; }
 form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: end; }
 .field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field.wide { grid-column: 1 / -1; }
 label { font-size: 0.85rem; font-weight: 600; color: var(--muted); }
-input, select {
+input {
   font: inherit; color: var(--ink); background: var(--bg);
   border: 1px solid var(--field-border); border-radius: 8px; padding: 10px 12px; min-height: 44px; width: 100%;
 }
 button { font: inherit; cursor: pointer; min-height: 44px; border-radius: 8px; border: 1px solid transparent; padding: 10px 18px; font-weight: 600; }
-button.primary { background: var(--accent); color: var(--accent-ink); grid-column: 1 / -1; min-height: 48px; }
+button.primary { background: var(--accent); color: var(--accent-ink); min-height: 48px; }
 button.primary:disabled { opacity: 0.6; cursor: default; }
+button.wide { grid-column: 1 / -1; }
 button.ghost { background: transparent; color: var(--muted); border-color: var(--field-border); padding: 6px 12px; min-height: 44px; font-weight: 500; }
 button.ghost.confirm { color: var(--bad); border-color: var(--bad); }
+.row { display: flex; flex-wrap: wrap; gap: 10px; grid-column: 1 / -1; }
+.row .primary { flex: 1 1 160px; }
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .msg { font-size: 0.95rem; color: var(--muted); margin: 0; }
 .msg:empty { display: none; }
@@ -112,27 +105,56 @@ li .cash { font-family: var(--font-display); font-weight: 700; font-size: 1.1rem
 .empty { color: var(--muted); margin: 0; }
 .status { font-size: 0.85rem; color: var(--muted); margin: 0; }
 .status:empty { display: none; }
+.admin { display: flex; justify-content: flex-end; }
 @media (prefers-reduced-motion: reduce) { .bar > span { transition: none; } }
 </style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
 
 <main>
   <header class="hero">
-    <div class="eyebrow">Bis 31. Dezember 2026</div>
-    <h1>Sparziel Dezember</h1>
-    <div>
-      <span class="total num" id="total">CHF 0</span>
-      <span class="of num" id="of">von CHF 200</span>
+    <div class="eyebrow" id="eyebrow">Sparziele</div>
+    <h1 id="goalName">Lädt …</h1>
+    <div id="goalView" hidden>
+      <div>
+        <span class="total num" id="total">CHF 0</span>
+        <span class="of num" id="of">von CHF 200</span>
+      </div>
+      <div class="bar" role="progressbar" aria-label="Fortschritt des Sparziels" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="totalBar" style="margin-top:12px"><span id="totalFill"></span></div>
+      <div class="facts" aria-live="polite" aria-atomic="true" style="margin-top:12px">
+        <span id="pace" class="pill neutral">Noch keine Einzahlung</span>
+        <span id="days">–</span>
+        <span id="perWeek">–</span>
+      </div>
     </div>
-    <div class="bar" role="progressbar" aria-label="Gesamtfortschritt" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="totalBar"><span id="totalFill"></span></div>
-    <div class="facts" aria-live="polite" aria-atomic="true">
-      <span id="pace" class="pill neutral">Noch keine Einzahlung</span>
-      <span id="days">–</span>
-      <span id="perWeek">–</span>
-    </div>
+    <p class="lead" id="lead" hidden>Leg dein erstes Sparziel an: ein Name, ein Betrag und eine Frist reichen.</p>
   </header>
 
-  <section class="card" aria-labelledby="formTitle">
+  <nav class="chips" id="goalNav" aria-label="Sparziele" hidden></nav>
+
+  <section class="card" id="newGoalCard" aria-labelledby="newGoalTitle" hidden>
+    <h2 id="newGoalTitle">Neues Sparziel</h2>
+    <form id="goalForm" autocomplete="off">
+      <div class="field wide">
+        <label for="gName">Name</label>
+        <input id="gName" maxlength="40" placeholder="z. B. Sparziel Dezember" required>
+      </div>
+      <div class="field">
+        <label for="gAmount">Betrag in CHF</label>
+        <input id="gAmount" inputmode="decimal" placeholder="z. B. 200" required>
+      </div>
+      <div class="field">
+        <label for="gEnd">Bis wann</label>
+        <input id="gEnd" type="date" required>
+      </div>
+      <div class="row">
+        <button class="primary" id="gSubmit" type="submit" disabled>Sparziel anlegen</button>
+        <button class="ghost" id="gCancel" type="button">Abbrechen</button>
+      </div>
+    </form>
+    <p class="msg" id="gMsg" role="status" aria-live="polite"></p>
+  </section>
+
+  <section class="card" id="depositCard" aria-labelledby="formTitle" hidden>
     <h2 id="formTitle">Einzahlung eintragen</h2>
     <p class="notice" id="notice" hidden>Speichern ist hier nicht verfügbar. Deine Einträge gehen verloren, sobald du die Seite schliesst.</p>
     <form id="form" autocomplete="off">
@@ -141,57 +163,40 @@ li .cash { font-family: var(--font-display); font-weight: 700; font-size: 1.1rem
         <input id="amount" inputmode="decimal" placeholder="z. B. 40" required>
       </div>
       <div class="field">
-        <label for="pot">Topf</label>
-        <select id="pot"></select>
-      </div>
-      <div class="field">
         <label for="date">Datum</label>
-        <input id="date" type="date" min="2026-11-01" max="2026-12-31" required>
+        <input id="date" type="date" required>
       </div>
-      <div class="field">
+      <div class="field wide">
         <label for="note">Notiz (optional)</label>
         <input id="note" maxlength="80" placeholder="z. B. Lohn">
       </div>
-      <button class="primary" id="submit" type="submit" disabled>Eintragen</button>
+      <button class="primary wide" id="submit" type="submit" disabled>Eintragen</button>
     </form>
     <p class="msg" id="msg" role="status" aria-live="polite"></p>
   </section>
 
-  <section class="pots" id="pots" aria-label="Töpfe"></section>
-
-  <section class="card" aria-labelledby="listTitle">
+  <section class="card" id="historyCard" aria-labelledby="listTitle" hidden>
     <h2 id="listTitle">Verlauf</h2>
     <p class="empty" id="empty">Noch keine Einzahlung. Trag oben deine erste ein, zum Beispiel 40 Franken für diese Woche.</p>
     <ul id="list"></ul>
-    <p class="status" id="status" role="status" aria-live="polite"></p>
+    <div class="admin"><button class="ghost" id="delGoal" type="button">Sparziel löschen</button></div>
   </section>
+  <p class="status" id="status" role="status" aria-live="polite"></p>
 </main>
 
 <script>
 (function () {
-  var POTS = {
-    zimmer:    { name: "Zimmer",    goal: 10000 },
-    ferien:    { name: "Ferien",    goal: 5000 },
-    allgemein: { name: "Allgemein", goal: 5000 }
-  };
-  var POT_KEYS = Object.keys(POTS);
-  var TOTAL_GOAL = 20000;
-  var MIN_CENTS = 5, MAX_CENTS = 100000;
-  var MIN_DATE = "2026-11-01", MAX_DATE = "2026-12-31";
-  var START = new Date(2026, 10, 26);
-  var END = new Date(2026, 11, 31);
+  var MIN_CENTS = 5, MAX_CENTS = 100000, MAX_GOAL_CENTS = 1000000;
   var DAY = 86400000;
-  var WEEK_CENTS = Math.round(TOTAL_GOAL / 5);   // Tempo: Ziel in fünf Wochen
 
-  var items = [];
-  var coll = null;
-  var persistent = false;
+  var goals = [], deposits = [];
+  var selected = null, creating = false, ready = false;
+  var gColl = null, dColl = null, persistent = false;
   var localCounter = 0;
-  var attempt = null;             // { sig, ref, createdAt } für eine erneute Eingabe ohne Duplikat
-  var lastSum = 0, lastByPot = {};
+  var attempt = null, gAttempt = null;
+  var dateGoalId = null;
 
   var $ = function (id) { return document.getElementById(id); };
-  function isPot(k) { return POT_KEYS.indexOf(k) !== -1; }
   function chf(c) {
     return "CHF " + (c % 100 === 0
       ? (c / 100).toLocaleString("de-CH")
@@ -199,9 +204,16 @@ li .cash { font-family: var(--font-display); font-weight: 700; font-size: 1.1rem
   }
   function pad(n) { return (n < 10 ? "0" : "") + n; }
   function ymd(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+  function parseYmd(s) { var p = String(s).split("-"); return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2])); }
   function dayNum(d) { return Math.round(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / DAY); }
+  function addDays(s, n) { var d = parseYmd(s); d.setDate(d.getDate() + n); return ymd(d); }
   function niceDate(s) { var p = String(s).split("-"); return p.length === 3 ? p[2] + "." + p[1] + "." + p[0] : s; }
-  function setMsg(t, kind) { var m = $("msg"); m.textContent = t; m.className = "msg" + (kind ? " " + kind : ""); }
+  function niceLong(s) {
+    var d = parseYmd(s);
+    return d.getDate() + ". " + ["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"][d.getMonth()] + " " + d.getFullYear();
+  }
+  function validYmd(s) { return /^\d{4}-\d\d-\d\d$/.test(s) && ymd(parseYmd(s)) === s; }
+  function setMsg(el, t, kind) { el.textContent = t; el.className = "msg" + (kind ? " " + kind : ""); }
   function parseCents(s) {
     var t = String(s).trim().replace(/['’\s]/g, "");
     var m = /^(?:CHF)?(\d+)(?:[.,](\d{1,2}))?(?:\.?[–-])?$/i.exec(t);
@@ -216,45 +228,64 @@ li .cash { font-family: var(--font-display); font-weight: 700; font-size: 1.1rem
   function save(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
   function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
 
-  // Töpfe und Auswahl aus POTS aufbauen
-  var potEls = {};
-  POT_KEYS.forEach(function (k) {
-    var art = document.createElement("article"); art.className = "pot"; art.setAttribute("data-pot", k);
-    var head = document.createElement("div"); head.className = "pot-head";
-    var h = document.createElement("h2"); h.textContent = POTS[k].name;
-    var amt = document.createElement("span"); amt.className = "amount num"; amt.textContent = chf(0);
-    head.appendChild(h); head.appendChild(amt);
-    var bar = document.createElement("div"); bar.className = "bar"; bar.setAttribute("role", "progressbar");
-    bar.setAttribute("aria-label", "Fortschritt " + POTS[k].name);
-    bar.setAttribute("aria-valuemin", "0"); bar.setAttribute("aria-valuemax", "100"); bar.setAttribute("aria-valuenow", "0");
-    var fill = document.createElement("span"); bar.appendChild(fill);
-    var goal = document.createElement("div"); goal.className = "goal num";
-    art.appendChild(head); art.appendChild(bar); art.appendChild(goal);
-    $("pots").appendChild(art);
-    potEls[k] = { amt: amt, bar: bar, fill: fill, goal: goal };
-    var opt = document.createElement("option"); opt.value = k; opt.textContent = POTS[k].name;
-    $("pot").appendChild(opt);
-  });
-  var savedPot = load("sparziel-topf");
-  if (savedPot && isPot(savedPot)) $("pot").value = savedPot;
+  function current() {
+    var g = null;
+    goals.forEach(function (x) { if (x.id === selected) g = x; });
+    if (!g && goals.length) { g = goals[0]; selected = g.id; }
+    return g;
+  }
+  function depositsOf(g) {
+    var first = goals.length ? goals[0].id : null;   // ältere Einträge ohne Ziel zählen zum ersten Sparziel
+    return deposits.filter(function (d) { return (d.goalId || first) === g.id; });
+  }
+
+  function renderNav(g) {
+    var nav = $("goalNav");
+    nav.textContent = "";
+    goals.forEach(function (x) {
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "chip"; b.textContent = x.name;
+      b.setAttribute("aria-pressed", String(g && x.id === g.id && !creating));
+      b.addEventListener("click", function () { selected = x.id; creating = false; save("sparziel-ziel", x.id); setMsg($("msg"), "", ""); render(); });
+      nav.appendChild(b);
+    });
+    var add = document.createElement("button");
+    add.type = "button"; add.className = "chip add"; add.textContent = "+ Neues Sparziel";
+    add.addEventListener("click", function () { openCreate(); });
+    nav.appendChild(add);
+    nav.hidden = goals.length === 0;
+  }
 
   function render() {
-    var sum = 0, byPot = {};
-    POT_KEYS.forEach(function (k) { byPot[k] = 0; });
-    items.forEach(function (it) { sum += it.cents; byPot[isPot(it.pot) ? it.pot : "allgemein"] += it.cents; });
-    lastSum = sum; lastByPot = byPot;
+    var g = ready ? current() : null;
+    var showCreate = ready && (creating || goals.length === 0);
+    $("newGoalCard").hidden = !showCreate;
+    $("lead").hidden = !(ready && goals.length === 0);
+    $("goalView").hidden = !g;
+    $("depositCard").hidden = !g;
+    $("historyCard").hidden = !g;
+    renderNav(g);
 
+    if (!ready) { $("goalName").textContent = "Lädt …"; $("eyebrow").textContent = "Sparziele"; return; }
+    if (!g) { $("goalName").textContent = "Noch kein Sparziel"; $("eyebrow").textContent = "Sparziele"; return; }
+
+    var mine = depositsOf(g);
+    var sum = 0;
+    mine.forEach(function (it) { sum += it.cents; });
+
+    $("eyebrow").textContent = "Bis " + niceLong(g.end);
+    $("goalName").textContent = g.name;
     $("total").textContent = chf(sum);
-    $("of").textContent = "von " + chf(TOTAL_GOAL);
-    var p = pct(sum, TOTAL_GOAL);
+    $("of").textContent = "von " + chf(g.cents);
+    var p = pct(sum, g.cents);
     $("totalFill").style.width = p + "%";
     $("totalBar").setAttribute("aria-valuenow", String(p));
-    $("totalBar").setAttribute("aria-valuetext", chf(sum) + " von " + chf(TOTAL_GOAL));
+    $("totalBar").setAttribute("aria-valuetext", chf(sum) + " von " + chf(g.cents));
 
-    var now = new Date();
-    var daysLeft = Math.max(0, dayNum(END) - dayNum(now));
-    var remaining = Math.max(0, TOTAL_GOAL - sum);
-    $("days").textContent = daysLeft === 0 ? "Heute ist der letzte Tag" : "Noch " + daysLeft + (daysLeft === 1 ? " Tag" : " Tage");
+    var now = new Date(), endD = parseYmd(g.end), startD = parseYmd(g.start);
+    var daysLeft = Math.max(0, dayNum(endD) - dayNum(now));
+    var remaining = Math.max(0, g.cents - sum);
+    $("days").textContent = daysLeft === 0 ? (dayNum(endD) < dayNum(now) ? "Frist vorbei" : "Heute ist der letzte Tag") : "Noch " + daysLeft + (daysLeft === 1 ? " Tag" : " Tage");
     if (remaining === 0) $("perWeek").textContent = "Nichts mehr nötig";
     else if (daysLeft === 0) $("perWeek").textContent = "Es fehlen noch " + chf(remaining);
     else {
@@ -262,35 +293,32 @@ li .cash { font-family: var(--font-display); font-weight: 700; font-size: 1.1rem
       $("perWeek").textContent = "Pro Woche nötig: ca. " + chf(Math.ceil(remaining / weeks / 100) * 100);
     }
 
+    var span = Math.max(1, dayNum(endD) - dayNum(startD));
+    var weekCents = Math.round(g.cents / Math.max(1, Math.ceil(span / 7)));
+    var elapsed = Math.min(1, Math.max(0, (dayNum(now) - dayNum(startD)) / span));
+    var behind = Math.round(g.cents * elapsed) - sum;
     var pace = $("pace");
-    var span = dayNum(END) - dayNum(START);
-    var elapsed = Math.min(1, Math.max(0, (dayNum(now) - dayNum(START)) / span));
-    var behind = Math.round(TOTAL_GOAL * elapsed) - sum;
     if (remaining === 0) { pace.textContent = "Ziel erreicht"; pace.className = "pill good"; }
-    else if (behind > WEEK_CENTS) { pace.textContent = "Du liegst " + chf(behind) + " hinter dem Plan"; pace.className = "pill warn"; }
+    else if (behind > weekCents) { pace.textContent = "Du liegst " + chf(behind) + " hinter dem Plan"; pace.className = "pill warn"; }
     else if (sum === 0) { pace.textContent = "Noch keine Einzahlung"; pace.className = "pill neutral"; }
     else if (behind <= 0) { pace.textContent = "Im Plan"; pace.className = "pill good"; }
     else { pace.textContent = "Auf Kurs"; pace.className = "pill neutral"; }
 
-    POT_KEYS.forEach(function (k) {
-      var e = potEls[k], left = Math.max(0, POTS[k].goal - byPot[k]), pp = pct(byPot[k], POTS[k].goal);
-      e.amt.textContent = chf(byPot[k]);
-      e.goal.textContent = left === 0 ? "Voll (Ziel " + chf(POTS[k].goal) + ")" : "Noch " + chf(left) + " bis " + chf(POTS[k].goal);
-      e.fill.style.width = pp + "%";
-      e.bar.setAttribute("aria-valuenow", String(pp));
-      e.bar.setAttribute("aria-valuetext", chf(byPot[k]) + " von " + chf(POTS[k].goal));
-      var opt = $("pot").querySelector('option[value="' + k + '"]');
-      opt.textContent = POTS[k].name + (left === 0 ? " (voll)" : " (noch " + chf(left) + ")");
-    });
+    if (dateGoalId !== g.id) {
+      dateGoalId = g.id;
+      var lo = addDays(g.start, -60);
+      $("date").min = lo; $("date").max = g.end;
+      var t = ymd(new Date());
+      $("date").value = t < lo ? lo : (t > g.end ? g.end : t);
+    }
 
     var list = $("list");
     list.textContent = "";
-    $("empty").hidden = items.length > 0;
-    items.forEach(function (it) {
-      var potName = POTS[isPot(it.pot) ? it.pot : "allgemein"].name;
+    $("empty").hidden = mine.length > 0;
+    mine.forEach(function (it) {
       var li = document.createElement("li");
       var what = document.createElement("div"); what.className = "what";
-      var t = document.createElement("span"); t.textContent = potName + (it.note ? " · " + it.note : "");
+      var t = document.createElement("span"); t.textContent = it.note || "Einzahlung";
       var meta = document.createElement("span"); meta.className = "meta num"; meta.textContent = niceDate(it.date);
       what.appendChild(t); what.appendChild(meta);
       var cash = document.createElement("span"); cash.className = "cash num"; cash.textContent = chf(it.cents);
@@ -306,100 +334,176 @@ li .cash { font-family: var(--font-display); font-weight: 700; font-size: 1.1rem
           return;
         }
         clearTimeout(armed); armed = null; del.disabled = true;
-        removeItem(it, potName);
+        removeDeposit(it);
       });
       li.appendChild(what); li.appendChild(cash); li.appendChild(del);
       list.appendChild(li);
     });
   }
 
-  function removeItem(it, potName) {
-    var okMsg = "Gelöscht: " + chf(it.cents) + " aus " + potName + ".";
-    if (persistent && coll) {
-      coll.doc(it.id).delete().then(function () { setMsg(okMsg, ""); })
-        .catch(function () { setMsg("Löschen hat nicht geklappt. Versuch es nochmal.", "err"); render(); });
+  function removeDeposit(it) {
+    var okMsg = "Gelöscht: " + chf(it.cents) + ".";
+    if (persistent && dColl) {
+      dColl.doc(it.id).delete().then(function () { setMsg($("msg"), okMsg, ""); })
+        .catch(function () { setMsg($("msg"), "Löschen hat nicht geklappt. Versuch es nochmal.", "err"); render(); });
     } else {
-      items = items.filter(function (x) { return x.id !== it.id; });
-      render(); setMsg(okMsg, "");
+      deposits = deposits.filter(function (x) { return x.id !== it.id; });
+      render(); setMsg($("msg"), okMsg, "");
     }
   }
 
-  function clampDate(s) { return s < MIN_DATE ? MIN_DATE : (s > MAX_DATE ? MAX_DATE : s); }
-  $("date").value = clampDate(ymd(new Date()));
+  // Sparziel löschen (mit Bestätigung)
+  var delGoalArmed = null;
+  $("delGoal").addEventListener("click", function () {
+    var g = current(); if (!g) return;
+    var b = $("delGoal");
+    if (!delGoalArmed) {
+      b.textContent = "Sparziel samt Einzahlungen löschen?"; b.classList.add("confirm");
+      delGoalArmed = setTimeout(function () { delGoalArmed = null; b.textContent = "Sparziel löschen"; b.classList.remove("confirm"); }, 5000);
+      return;
+    }
+    clearTimeout(delGoalArmed); delGoalArmed = null; b.textContent = "Sparziel löschen"; b.classList.remove("confirm");
+    var mine = depositsOf(g);
+    if (persistent && gColl && dColl) {
+      Promise.all(mine.map(function (d) { return dColl.doc(d.id).delete(); }).concat([gColl.doc(g.id).delete()]))
+        .then(function () { selected = null; setMsg($("msg"), "", ""); })
+        .catch(function () { setMsg($("msg"), "Löschen hat nicht geklappt. Versuch es nochmal.", "err"); });
+    } else {
+      deposits = deposits.filter(function (d) { return mine.indexOf(d) === -1; });
+      goals = goals.filter(function (x) { return x.id !== g.id; });
+      selected = null; render();
+    }
+  });
 
+  // Neues Sparziel
+  function openCreate() {
+    creating = true;
+    var first = goals.length === 0;
+    $("gName").value = first ? "Sparziel Dezember" : "";
+    $("gAmount").value = first ? "200" : "";
+    $("gEnd").value = first ? "2026-12-31" : "";
+    $("gEnd").min = ymd(new Date());
+    setMsg($("gMsg"), "", "");
+    render();
+    $("gName").focus();
+  }
+  $("gEnd").min = ymd(new Date());
+  $("gCancel").addEventListener("click", function () { creating = false; render(); });
+  $("goalForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var name = $("gName").value.trim();
+    var cents = parseCents($("gAmount").value);
+    var end = $("gEnd").value;
+    var gm = $("gMsg");
+    if (!name) { setMsg(gm, "Gib dem Sparziel einen Namen.", "err"); $("gName").focus(); return; }
+    if (cents === null || cents < MIN_CENTS || cents > MAX_GOAL_CENTS) { setMsg(gm, "Nur Zahlen von 0.05 bis 10000, zum Beispiel 200 oder 150,50.", "err"); $("gAmount").focus(); return; }
+    var today = ymd(new Date());
+    if (!validYmd(end) || end < today) { setMsg(gm, "Wähle eine Frist, die heute oder später ist.", "err"); $("gEnd").focus(); return; }
+    var rec = { name: name.slice(0, 40), cents: cents, start: today, end: end, createdAt: Date.now() };
+    var btn = $("gSubmit"); btn.disabled = true; setMsg(gm, "", "");
+    function done(id) {
+      btn.disabled = false; creating = false; selected = id; save("sparziel-ziel", id); dateGoalId = null;
+      render();
+      setMsg($("msg"), "Sparziel angelegt. Trag jetzt deine erste Einzahlung ein.", "ok");
+      $("amount").focus();
+    }
+    if (persistent && gColl) {
+      var sig = [name, cents, end].join("|");
+      if (!gAttempt || gAttempt.sig !== sig) gAttempt = { sig: sig, ref: gColl.doc(), createdAt: rec.createdAt };
+      rec.createdAt = gAttempt.createdAt;
+      var slow = setTimeout(function () { btn.disabled = false; setMsg(gm, "Das dauert länger als üblich. Prüf die Verbindung. Du kannst es nochmal versuchen, es wird nicht doppelt angelegt.", "err"); }, 15000);
+      var ref = gAttempt.ref;
+      ref.set(rec).then(function () { clearTimeout(slow); gAttempt = null; done(ref.id); }).catch(function (err) {
+        clearTimeout(slow); btn.disabled = false;
+        var code = err && err.code;
+        if (code === "quota_exceeded") { gAttempt = null; setMsg(gm, "Der Speicher ist voll. Lösch alte Sparziele und versuch es nochmal.", "err"); }
+        else if (code === "invalid_argument" || code === "revoked") { gAttempt = null; setMsg(gm, "Du hast hier keine Schreibrechte. Öffne die Seite mit deinem Konto.", "err"); }
+        else setMsg(gm, "Speichern hat nicht geklappt. Prüf die Verbindung und versuch es nochmal.", "err");
+      });
+    } else {
+      rec.id = "local-g" + (++localCounter); goals.push(rec); done(rec.id);
+    }
+  });
+
+  // Einzahlung
   $("form").addEventListener("submit", function (e) {
     e.preventDefault();
+    var g = current(); if (!g) return;
+    var m = $("msg");
     var cents = parseCents($("amount").value);
-    if (cents === null || cents < MIN_CENTS || cents > MAX_CENTS) {
-      setMsg("Nur Zahlen von 0.05 bis 1000, zum Beispiel 40 oder 12,50.", "err"); $("amount").focus(); return;
-    }
-    var date = $("date").value;
-    if (!/^\d{4}-\d\d-\d\d$/.test(date) || date < MIN_DATE || date > MAX_DATE) {
-      setMsg("Wähle ein Datum zwischen 1. November und 31. Dezember 2026.", "err"); $("date").focus(); return;
-    }
-    var pot = isPot($("pot").value) ? $("pot").value : "allgemein";
-    var rec = { cents: cents, pot: pot, note: $("note").value.trim().slice(0, 80), date: date, createdAt: Date.now() };
-    var btn = $("submit"); btn.disabled = true; setMsg("", "");
-    save("sparziel-topf", pot);
+    if (cents === null || cents < MIN_CENTS || cents > MAX_CENTS) { setMsg(m, "Nur Zahlen von 0.05 bis 1000, zum Beispiel 40 oder 12,50.", "err"); $("amount").focus(); return; }
+    var date = $("date").value, lo = addDays(g.start, -60);
+    if (!validYmd(date) || date < lo || date > g.end) { setMsg(m, "Wähle ein Datum zwischen " + niceDate(lo) + " und " + niceDate(g.end) + ".", "err"); $("date").focus(); return; }
+    var rec = { goalId: g.id, cents: cents, note: $("note").value.trim().slice(0, 80), date: date, createdAt: Date.now() };
+    var btn = $("submit"); btn.disabled = true; setMsg(m, "", "");
+    var sumNow = 0; depositsOf(g).forEach(function (d) { sumNow += d.cents; });
 
     function success() {
-      var after = lastSum + cents, potAfter = (lastByPot[pot] || 0) + cents;
-      var left = Math.max(0, TOTAL_GOAL - after);
-      var text = "Eingetragen: " + chf(cents) + " in " + POTS[pot].name + ". " + (left === 0 ? "Gesamtziel erreicht." : "Noch " + chf(left) + " bis zum Ziel.");
-      if (potAfter > POTS[pot].goal) text += " Der Topf " + POTS[pot].name + " ist damit voll.";
-      btn.disabled = false; $("amount").value = ""; $("note").value = ""; setMsg(text, "ok"); $("amount").focus();
+      var left = Math.max(0, g.cents - sumNow - cents);
+      btn.disabled = false; $("amount").value = ""; $("note").value = "";
+      setMsg(m, "Eingetragen: " + chf(cents) + ". " + (left === 0 ? "Sparziel erreicht." : "Noch " + chf(left) + " bis zum Ziel."), "ok");
+      $("amount").focus();
     }
-
-    if (persistent && coll) {
-      var sig = [cents, pot, date, rec.note].join("|");
-      if (!attempt || attempt.sig !== sig) attempt = { sig: sig, ref: coll.doc(), createdAt: rec.createdAt };
+    if (persistent && dColl) {
+      var sig = [g.id, cents, date, rec.note].join("|");
+      if (!attempt || attempt.sig !== sig) attempt = { sig: sig, ref: dColl.doc(), createdAt: rec.createdAt };
       rec.createdAt = attempt.createdAt;
-      var slow = setTimeout(function () {
-        btn.disabled = false;
-        setMsg("Das dauert länger als üblich. Prüf die Verbindung. Du kannst es nochmal versuchen, es wird nicht doppelt eingetragen.", "err");
-      }, 15000);
+      var slow = setTimeout(function () { btn.disabled = false; setMsg(m, "Das dauert länger als üblich. Prüf die Verbindung. Du kannst es nochmal versuchen, es wird nicht doppelt eingetragen.", "err"); }, 15000);
       attempt.ref.set(rec).then(function () { clearTimeout(slow); attempt = null; success(); }).catch(function (err) {
         clearTimeout(slow); btn.disabled = false;
         var code = err && err.code;
-        if (code === "quota_exceeded") { attempt = null; setMsg("Der Speicher ist voll. Lösch alte Einträge und versuch es nochmal.", "err"); }
-        else if (code === "invalid_argument" || code === "revoked") { attempt = null; setMsg("Du hast hier keine Schreibrechte. Öffne die Seite mit deinem Konto.", "err"); }
-        else setMsg("Speichern hat nicht geklappt. Prüf die Verbindung und versuch es nochmal.", "err");
+        if (code === "quota_exceeded") { attempt = null; setMsg(m, "Der Speicher ist voll. Lösch alte Einträge und versuch es nochmal.", "err"); }
+        else if (code === "invalid_argument" || code === "revoked") { attempt = null; setMsg(m, "Du hast hier keine Schreibrechte. Öffne die Seite mit deinem Konto.", "err"); }
+        else setMsg(m, "Speichern hat nicht geklappt. Prüf die Verbindung und versuch es nochmal.", "err");
       });
     } else {
-      rec.id = "local-" + (++localCounter); items.unshift(rec); render(); success();
+      rec.id = "local-d" + (++localCounter); deposits.unshift(rec); render(); success();
     }
   });
 
   document.addEventListener("visibilitychange", function () { if (!document.hidden) render(); });
   render();
 
-  // Speicher: privater Bereich des Viewers in der Datenbank
-  function noStorage() {
-    $("notice").hidden = false;
-    $("submit").disabled = false;
+  function ready_(persist) {
+    persistent = persist;
+    $("submit").disabled = false; $("gSubmit").disabled = false;
+    if (!persist) { $("notice").hidden = false; ready = true; render(); }
   }
+
   (async function () {
     var status = $("status");
     try {
-      if (!window.claude || !window.claude.use) { noStorage(); return; }
+      if (!window.claude || !window.claude.use) { ready_(false); return; }
       var results = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
       var db = results[0], user = results[1];
       var uid = user ? await user.id() : null;
-      if (!db || !uid) { noStorage(); return; }
-      coll = db.doc("data/users/" + uid + "/profile").collection("deposits");
-      persistent = true;
-      $("submit").disabled = false;
-      var timer = setTimeout(function () { status.textContent = "Die gespeicherten Einzahlungen sind gerade nicht erreichbar. Angezeigt wird der letzte bekannte Stand."; }, 10000);
-      coll.orderBy("createdAt", "desc").limit(500).onSnapshot(function (snap) {
-        if (!snap.metadata.fromCache) { clearTimeout(timer); status.textContent = ""; }
-        items = snap.docs.map(function (d) {
+      if (!db || !uid) { ready_(false); return; }
+      var base = db.doc("data/users/" + uid + "/profile");
+      gColl = base.collection("goals"); dColl = base.collection("deposits");
+      selected = load("sparziel-ziel");
+      ready_(true);
+      var timer = setTimeout(function () { status.textContent = "Die gespeicherten Daten sind gerade nicht erreichbar. Angezeigt wird der letzte bekannte Stand."; ready = true; render(); }, 10000);
+      var gotGoals = false, gotDeposits = false;
+      function settle() { if (gotGoals && gotDeposits) { clearTimeout(timer); status.textContent = ""; ready = true; render(); } }
+      gColl.orderBy("createdAt", "asc").limit(100).onSnapshot(function (snap) {
+        goals = snap.docs.map(function (d) {
           var x = d.data() || {};
-          return { id: d.id, cents: Number(x.cents) || 0, pot: String(x.pot || ""), note: String(x.note || ""), date: String(x.date || ""), createdAt: Number(x.createdAt) || 0 };
+          return { id: d.id, name: String(x.name || "Sparziel"), cents: Number(x.cents) || 0, start: validYmd(String(x.start)) ? String(x.start) : ymd(new Date()), end: validYmd(String(x.end)) ? String(x.end) : ymd(new Date()), createdAt: Number(x.createdAt) || 0 };
         });
+        if (!snap.metadata.fromCache) gotGoals = true;
+        if (gotGoals && gotDeposits) { ready = true; clearTimeout(timer); status.textContent = ""; }
         render();
-      }, function () { clearTimeout(timer); status.textContent = "Der Speicher ist gerade nicht erreichbar."; });
+      }, function () { clearTimeout(timer); status.textContent = "Der Speicher ist gerade nicht erreichbar."; ready = true; render(); });
+      dColl.orderBy("createdAt", "desc").limit(500).onSnapshot(function (snap) {
+        deposits = snap.docs.map(function (d) {
+          var x = d.data() || {};
+          return { id: d.id, goalId: x.goalId ? String(x.goalId) : "", cents: Number(x.cents) || 0, note: String(x.note || ""), date: String(x.date || ""), createdAt: Number(x.createdAt) || 0 };
+        });
+        if (!snap.metadata.fromCache) gotDeposits = true;
+        settle(); render();
+      }, function () { clearTimeout(timer); status.textContent = "Der Speicher ist gerade nicht erreichbar."; ready = true; render(); });
     } catch (err) {
-      noStorage();
+      ready_(false);
     }
   })();
 })();
