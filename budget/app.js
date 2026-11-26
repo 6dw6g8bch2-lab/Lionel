@@ -1,6 +1,6 @@
 "use strict";
 /* Lionels Budget – läuft komplett im Browser, Daten liegen in localStorage auf dem Gerät. */
-const APP_VERSION = "3.0.3";
+const APP_VERSION = "3.1.0";
 const STORE_KEY = "lionel-budget-v1";
 const EARLY_PAY_DAYS = 7, MIN_TEMPO_DAYS = 5, GOOD_MARGIN = 20, WARN_SHARE = .8, PACE_TOL = .05, BACKUP_REMIND_DAYS = 7;
 
@@ -54,7 +54,7 @@ const isDate = v => /^\d{4}-\d{2}-\d{2}$/.test(String(v));
 
 /* ---------- Speicher ---------- */
 const DEF_SETTINGS = {startBalance:0, startDate:todayIso(), goal:0, goals:{}, income:0, payday:25, limits:{}, recurring:[], skips:{}};
-const CAR_DEF = {name:"Occasion, z. B. Mazda MX-5 oder Suzuki Swift Sport", price:8000, reserve:2000, saved:0, start:"2026-08", wages:[850,1050,1584], rates:[100,350,700], inBudget:true};
+const CAR_DEF = {flat:200, name:"Occasion, z. B. Mazda MX-5 oder Suzuki Swift Sport", price:8000, reserve:2000, saved:0, start:"2026-08", wages:[850,1050,1584], rates:[100,350,700], inBudget:true};
 let S = structuredClone(DEF_SETTINGS), P = [], C = structuredClone(CAR_DEF), carStored = false, M = {}, apSeen = new Set(), lastBackup = 0, storeOk = true, T = {};
 
 function catId(v, type) {
@@ -97,7 +97,9 @@ function cleanSettings(b) {
 }
 function cleanCar(c) {
   const arr = (a, d) => Array.isArray(a) && a.length === 3 ? a.map(x => +x || 0) : [...d];
-  return {name:String(c.name || CAR_DEF.name), price:+c.price || 0, reserve:+c.reserve || 0, saved:+c.saved || 0,
+  // flat = feste Sparrate pro Monat (CHF). 0 = Rate nach Lehrjahr. Alte Pläne ohne Angabe bekommen den Standard.
+  const flat = c.flat === undefined || c.flat === null ? CAR_DEF.flat : (Number.isFinite(+c.flat) && +c.flat > 0 ? r2(+c.flat) : 0);
+  return {flat, name:String(c.name || CAR_DEF.name), price:+c.price || 0, reserve:+c.reserve || 0, saved:+c.saved || 0,
     start:/^\d{4}-\d{2}$/.test(String(c.start)) ? c.start : CAR_DEF.start, wages:arr(c.wages, CAR_DEF.wages), rates:arr(c.rates, CAR_DEF.rates), inBudget:c.inBudget === true, ts:+c.ts || 0};
 }
 function applyData(d) {
@@ -165,9 +167,10 @@ const savedTotal = () => r2(Math.max(C.saved + savedPays(), 0));
 const saveOn = () => carStored && C.inBudget;
 // Sparrate der Periode: richtet sich nach dem Lehrjahr beim Lohn, mit dem die Periode beginnt
 const earlyLohn = start => P.filter(p => p.type === "in" && p.category === "lohn" && p.date >= addDays(start, -EARLY_PAY_DAYS) && p.date < start).map(p => p.date).sort()[0];
+const rateFor = yr => +C.flat > 0 ? +C.flat : (+C.rates[yr] || 0);
 function saveInfo(per) {
   const [sy, sm] = C.start.split("-").map(Number), s0 = sy * 12 + (sm - 1), d = D(per.start), k = d.getFullYear() * 12 + d.getMonth();
-  const yr = Math.floor((k - s0) / 12), rate = yr >= 0 && yr <= 2 ? (+C.rates[yr] || 0) : 0;
+  const yr = Math.floor((k - s0) / 12), rate = yr >= 0 && yr <= 2 ? rateFor(yr) : 0;
   const next = addDays(per.end, 1), from = earlyLohn(per.start) || per.start, to = earlyLohn(next) || next;
   const done = sum(P.filter(p => isSave(p) && p.date >= from && p.date < to));
   return {k, s0, yr, rate, done, rest:r2(Math.max(rate - done, 0))};
@@ -423,7 +426,7 @@ function renderBanners() {
     out.push(`<div class="banner"><div class="t"><b>Lohn schon da?</b>Manchmal kommt er vor dem ${esc(fmtDay(addDays(per.end, 1)))}.</div><div class="acts"><button class="btn" type="button" data-lohn="${today}">${esc(chf(S.income))} eintragen</button></div></div>`);
   const sv = saveInfo(per);
   if (saveOn() && sv.rest > 0 && !lohnDue && !S.skips["save:" + per.start] && P.some(p => p.type === "in" && p.category === "lohn" && p.date >= addDays(per.start, -EARLY_PAY_DAYS) && p.date <= per.end))
-    out.push(`<div class="banner"><div class="t"><b>${esc(chf(sv.rest))} fürs Sparziel</b>Schon aufs Sparkonto überwiesen?</div><div class="acts"><button class="btn ghost" type="button" data-skip="save" aria-label="Sparziel-Hinweis ausblenden">Später</button><button class="btn primary" type="button" data-save="${sv.rest}" aria-label="${esc(chf(sv.rest))} fürs Sparziel eintragen">Eintragen</button></div></div>`);
+    out.push(`<div class="banner"><div class="t"><b>${diff(per.start, todayIso()) <= 4 ? "Neuer Monat: " : ""}${esc(chf(sv.rest))} fürs Sparziel</b>${diff(per.start, todayIso()) <= 4 ? "Dein Sparplan für diese Periode. " : ""}Schon aufs Sparkonto überwiesen?</div><div class="acts"><button class="btn ghost" type="button" data-skip="save" aria-label="Sparziel-Hinweis ausblenden">Später</button><button class="btn primary" type="button" data-save="${sv.rest}" aria-label="${esc(chf(sv.rest))} fürs Sparziel eintragen">Eintragen</button></div></div>`);
   for (const r of S.recurring) {
     const due = dueDate(per, r.day), key = r.id + ":" + per.start;
     if (due > today || S.skips[key] || P.some(p => p.rid === r.id && p.date >= per.start && p.date <= per.end)) continue;
@@ -652,10 +655,56 @@ function carPlan() {
   };
   step(sv.k, sv.yr, sv.rest); // offene Rate der laufenden Periode
   const endK = sv.s0 + 35;
-  for (let k = Math.max(sv.k + 1, sv.s0); k <= endK; k++) { const yr = Math.floor((k - sv.s0) / 12); step(k, yr, +C.rates[yr] || 0); }
+  for (let k = Math.max(sv.k + 1, sv.s0); k <= endK; k++) { const yr = Math.floor((k - sv.s0) / 12); step(k, yr, rateFor(yr)); }
   return {target, rows, saved, end:total, reach, nowYr:sv.yr, sv, endLabel:MONL[endK % 12] + " " + Math.floor(endK / 12)};
 }
+// Sparverlauf wie ein Kursverlauf: Periode für Periode. Name = Monat, in dem die Periode endet (25. Okt – 24. Nov = November).
+function renderSaveHistory() {
+  const box = $("hisBody"); if (!box) return;
+  const today = todayIso(), cur = periodOf(today);
+  const earliest = [S.startDate, P.filter(isSave).map(p => p.date).sort()[0]].filter(Boolean).sort()[0];   // nichts anzeigen, was vor dem Start der App liegt
+  const pers = []; let st = cur.start;
+  for (let i = 0; i < 12; i++) { const per = periodOf(st); pers.unshift(per); if (per.start <= earliest) break; st = shiftPeriod(st, -1); }
+  const rows = pers.map(per => {
+    const sv = saveInfo(per), to = earlyLohn(addDays(per.end, 1)) || addDays(per.end, 1);
+    return {per, rate:sv.rate, done:sv.done, cum:r2(C.saved + sum(P.filter(p => isSave(p) && p.date < to))), isCur:per.start === cur.start, m:D(per.end).getMonth()};
+  });
+  let plan = r2(rows[0].cum - rows[0].done); const base = plan;
+  rows.forEach(r => { plan = r2(plan + r.rate); r.plan = plan; });
+  if (!(carStored || P.some(isSave)) || !rows.some(r => r.rate > 0 || r.done > 0)) { box.innerHTML = `<p class="hint">Sobald du Überweisungen aufs Sparkonto einträgst (unter «Heute» als <b>Sparen</b>), siehst du hier deinen Verlauf.</p>`; return; }
+  const n = rows.length, W = 340, H = 170, L = 46, R = 14, T = 16, B = 26, iw = W - L - R, ih = H - T - B;
+  const vals = rows.flatMap(r => [r.cum, r.plan]).concat([base]);
+  let lo = Math.min(...vals), hi = Math.max(...vals); if (hi - lo < 1) hi = lo + 1;
+  const pad = (hi - lo) * .12; lo -= pad; hi += pad;
+  const X = i => L + (n > 1 ? iw * i / (n - 1) : iw / 2), Y = v => T + ih * (1 - (v - lo) / (hi - lo));
+  const pts = k => rows.map((r, i) => `${X(i).toFixed(1)},${Y(r[k]).toFixed(1)}`).join(" ");
+  const int = v => chf(Math.round(v), {bare:true}).replace(/\.00$/, "");
+  const ticks = [lo + pad, (lo + hi) / 2, hi - pad].map(v => `<line x1="${L}" x2="${W - R}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}" stroke="var(--line)"/><text x="${L - 6}" y="${(Y(v) + 4).toFixed(1)}" text-anchor="end" font-size="11" fill="var(--muted)">${esc(int(v))}</text>`).join("");
+  const step = n > 8 ? 2 : 1;
+  const xl = rows.map((r, i) => (i % step === 0 || i === n - 1) ? `<text x="${X(i).toFixed(1)}" y="${H - 8}" text-anchor="middle" font-size="11" fill="var(--muted)">${MON[r.m]}</text>` : "").join("");
+  const last = rows[n - 1], dots = rows.map((r, i) => `<circle cx="${X(i).toFixed(1)}" cy="${Y(r.cum).toFixed(1)}" r="${i === n - 1 ? 5 : 3}" fill="var(--accent)"/>`).join("");
+  const body = rows.slice().reverse().map(r => {
+    let st;
+    if (r.rate <= 0) st = `<span class="muted">–</span>`;
+    else if (r.done >= r.rate) st = `<span class="pill good">erreicht</span>`;
+    else if (r.isCur) st = `<span class="pill neutral">läuft</span>`;
+    else st = `<span class="pill warn">${esc(chf(r2(r.rate - r.done), {bare:true}).replace(/\.00$/, ""))} fehlen</span>`;
+    return `<tr class="${r.isCur ? "now" : ""}"><td>${MONL[r.m]}${r.isCur ? ' <span class="nowtag">jetzt</span>' : ""}</td><td>${int(r.done)}</td><td>${int(r.rate)}</td><td>${st}</td></tr>`;
+  }).join("");
+  box.innerHTML = `
+    <div class="sum"><span>Gespart insgesamt <b class="num">${esc(chf(last.cum))}</b></span><span>Plan bis jetzt <b class="num">${esc(chf(last.plan))}</b></span></div>
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Sparverlauf der letzten ${n} Monate. Gespart insgesamt ${esc(chf(last.cum))}, laut Plan ${esc(chf(last.plan))}.">
+      ${ticks}${xl}
+      ${n > 1 ? `<polyline points="${pts("plan")}" fill="none" stroke="var(--neutral)" stroke-width="2" stroke-dasharray="5 4"/><polyline points="${pts("cum")}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>` : ""}
+      ${dots}
+    </svg>
+    <div class="leg"><span><b style="color:var(--accent)">&#9473;</b> gespart insgesamt</span><span><b style="color:var(--neutral)">&#9477;</b> Plan</span></div>
+    <div class="tablewrap" role="region" aria-label="Sparen pro Monat" tabindex="0"><table>
+      <thead><tr><th>Monat</th><th>Gespart</th><th>Plan</th><th>Stand</th></tr></thead><tbody>${body}</tbody></table></div>
+    <p class="note">Ein Monat ist eine Lohnperiode und trägt den Namen des Monats, in dem sie endet. Die Rate für den neuen Monat gilt automatisch ab dem Lohntag.</p>`;
+}
 function renderCar() {
+  renderSaveHistory();
   const p = carPlan(), sv = p.sv, pct = p.target > 0 ? Math.min(Math.max(p.saved, 0) / p.target, 1) : 0, tick = p.target > 0 ? Math.min(C.price / p.target, 1) : 0;
   const pill = $("carPill"); pill.className = "pill " + (carStored ? "good" : "neutral"); pill.textContent = carStored ? "Dein Plan" : "Vorschlag";
   let when;
@@ -665,7 +714,7 @@ function renderCar() {
   else when = `<dd class="warn wrap">nicht bis Lehrende, es fehlen ${chf(p.target - p.end)}</dd>`;
   const int = n => chf(Math.round(n), {bare:true}).replace(/\.00$/, "");
   const amt = n => chf(n, {bare:true}).replace(/\.00$/, "");
-  const rows = p.rows.map((r, i) => { const w = +C.wages[i] || 0, rate = +C.rates[i] || 0, share = w > 0 ? Math.round(rate / w * 100) + " %" : "–";
+  const rows = p.rows.map((r, i) => { const w = +C.wages[i] || 0, rate = rateFor(i), share = w > 0 ? Math.round(rate / w * 100) + " %" : "–";
     return `<tr class="${i === p.nowYr ? "now" : ""}"><td>${i + 1}. Jahr${i === p.nowYr ? ' <span class="nowtag">jetzt</span>' : ""}</td><td>${int(rate)}</td><td>${share}</td><td>${int(r.sum)}</td></tr>`; }).join("");
   // Was in dieser Periode zu tun ist
   let action;
@@ -695,7 +744,7 @@ function renderCar() {
     toast(sv.rest > 0 ? `Plan übernommen. Dein Tagesbudget ist jetzt CHF ${amt(heroToday ?? 0)}, weil CHF ${amt(sv.rest)} bis zum Lohn zurückgelegt werden.` : "Plan übernommen.", {undo:() => { carStored = false; save(); renderAll(); }}); };
 }
 function fillCar() {
-  $("cName").value = C.name; $("cPrice").value = C.price; $("cReserve").value = C.reserve; $("cSaved").value = $("cSaved").dataset.shown = savedTotal(); $("cStart").value = C.start; $("cInBudget").checked = C.inBudget;
+  $("cName").value = C.name; $("cPrice").value = C.price; $("cReserve").value = C.reserve; $("cSaved").value = $("cSaved").dataset.shown = savedTotal(); $("cStart").value = C.start; $("cInBudget").checked = C.inBudget; $("cFlat").value = C.flat > 0 ? C.flat : "";
   [0, 1, 2].forEach(i => { $("cW" + i).value = C.wages[i]; $("cR" + i).value = C.rates[i]; });
 }
 
@@ -957,9 +1006,9 @@ function bind() {
     const m = $("cMsg"); m.textContent = ""; m.className = "status";
     document.querySelectorAll("#carEdit [aria-invalid]").forEach(e => e.removeAttribute("aria-invalid"));
     const num = id => { const v = $(id).value.trim(); return v === "" ? 0 : parseAmt(v); };
-    const bad = ["cPrice","cReserve","cSaved","cW0","cW1","cW2","cR0","cR1","cR2"].find(id => Number.isNaN(num(id)));
+    const bad = ["cFlat","cPrice","cReserve","cSaved","cW0","cW1","cW2","cR0","cR1","cR2"].find(id => Number.isNaN(num(id)));
     if (bad) { const f = $(bad); f.setAttribute("aria-invalid", "true"); f.focus(); m.className = "status err"; m.textContent = `«${f.previousElementSibling.textContent}» ist keine Zahl. Beispiel: 350`; return; }
-    C = {name:$("cName").value.trim() || CAR_DEF.name, price:num("cPrice"), reserve:num("cReserve"), saved:$("cSaved").value.trim() === $("cSaved").dataset.shown ? C.saved : r2(num("cSaved") - savedPays()), inBudget:$("cInBudget").checked, ts:Date.now(), start:/^\d{4}-\d{2}$/.test($("cStart").value) ? $("cStart").value : CAR_DEF.start,
+    C = {flat:num("cFlat"), name:$("cName").value.trim() || CAR_DEF.name, price:num("cPrice"), reserve:num("cReserve"), saved:$("cSaved").value.trim() === $("cSaved").dataset.shown ? C.saved : r2(num("cSaved") - savedPays()), inBudget:$("cInBudget").checked, ts:Date.now(), start:/^\d{4}-\d{2}$/.test($("cStart").value) ? $("cStart").value : CAR_DEF.start,
       wages:[0, 1, 2].map(i => num("cW" + i)), rates:[0, 1, 2].map(i => num("cR" + i))};
     carStored = true; save(); renderAll(); $("carEdit").open = false; $("carEdit").querySelector("summary").focus(); toast("Sparplan gespeichert.");
   };

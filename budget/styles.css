@@ -318,3 +318,12 @@ dialog::backdrop{background:rgb(0 0 0 / .4)}
 
 .steps a{color:var(--accent);font-weight:600}
 .field input[type=password]{letter-spacing:.05em}
+
+/* Sparverlauf */
+.his{display:grid;gap:12px;min-width:0}
+.his svg{display:block;width:100%;height:auto}
+.his .sum{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:.92rem;color:var(--muted)}
+.his .sum b{color:var(--fg);font-weight:650}
+.his .leg{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:.82rem;color:var(--muted)}
+.his .note{font-size:.85rem;color:var(--muted);margin:0}
+.his td .pill{white-space:nowrap}
