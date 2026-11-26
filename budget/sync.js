@@ -61,6 +61,12 @@ async function writeRemote(blob) {
 /* ---------- Zusammenführen ---------- */
 // Zahlungen: nach Nummer vereinen, die neuere Änderung gewinnt. Gelöschtes bleibt gelöscht.
 // Einstellungen und Sparplan: die zuletzt geänderte Version gewinnt.
+// Einstellungen: die neuere Version gewinnt. Ziele pro Periode werden zusammengeführt, damit kein Gerät ein neu gesetztes Ziel verliert.
+function mergeSettings(sa, sb) {
+  const win = (+sa.ts || 0) >= (+sb.ts || 0) ? sa : sb, lose = win === sa ? sb : sa;
+  const goals = {...(lose.goals && typeof lose.goals === "object" ? lose.goals : {}), ...(win.goals && typeof win.goals === "object" ? win.goals : {})};
+  return Object.keys(goals).length ? {...win, goals} : win;
+}
 function mergeData(a, b) {
   const del = {...(b.del || {}), ...(a.del || {})};
   for (const k of Object.keys(del)) del[k] = Math.max(+(a.del || {})[k] || 0, +(b.del || {})[k] || 0);
@@ -70,7 +76,7 @@ function mergeData(a, b) {
   const sa = a.settings || {}, sb = b.settings || {}, ca = a.car, cb = b.car;
   return {
     app:"lionels-budget", v:1, exportedAt:new Date().toISOString(),
-    settings:(+sa.ts || 0) >= (+sb.ts || 0) ? sa : sb,
+    settings:mergeSettings(sa, sb),
     payments,
     car:!ca ? cb : !cb ? ca : ((+ca.ts || 0) >= (+cb.ts || 0) ? ca : cb),
     merchants:{...(b.merchants || {}), ...(a.merchants || {})},

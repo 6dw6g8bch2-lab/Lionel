@@ -1,6 +1,6 @@
 "use strict";
 /* Lionels Budget – läuft komplett im Browser, Daten liegen in localStorage auf dem Gerät. */
-const APP_VERSION = "3.0.2";
+const APP_VERSION = "3.0.3";
 const STORE_KEY = "lionel-budget-v1";
 const EARLY_PAY_DAYS = 7, MIN_TEMPO_DAYS = 5, GOOD_MARGIN = 20, WARN_SHARE = .8, PACE_TOL = .05, BACKUP_REMIND_DAYS = 7;
 
@@ -87,7 +87,7 @@ function cleanSettings(b) {
     startDate:isDate(b.startDate) ? b.startDate : todayIso(),
     goal:+b.goal || 0, income:+b.income || 0,
     // Ziel pro Periode (Schlüssel = Starttag der Periode). Ein eigener Eintrag schlägt das Standardziel, 0 heisst «kein Ziel».
-    goals:Object.fromEntries(Object.entries(b.goals && typeof b.goals === "object" ? b.goals : {}).filter(([k, v]) => isDate(k) && Number.isFinite(+v) && +v >= 0).map(([k, v]) => [k, r2(+v)])),
+    goals:Object.fromEntries(Object.entries(b.goals && typeof b.goals === "object" ? b.goals : {}).filter(([k, v]) => isDate(k) && !Number.isNaN(Date.parse(k)) && (typeof v === "number" ? Number.isFinite(v) : typeof v === "string" && v.trim() !== "" && Number.isFinite(+v)) && +v >= 0).map(([k, v]) => [k, r2(+v)])),
     payday:Math.min(Math.max(Math.round(+b.payday || 25), 1), 28),
     limits:Object.fromEntries(Object.entries(b.limits || {}).filter(([k, v]) => OUT.some(c => c.id === k) && +v > 0).map(([k, v]) => [k, +v])),
     recurring:Array.isArray(b.recurring) ? b.recurring.filter(r => r && r.name && +r.amount > 0).map(r => ({id:String(r.id || uid()), name:String(r.name).slice(0, 40), amount:r2(+r.amount), day:Math.min(Math.max(Math.round(+r.day || 1), 1), 28)})) : [],
@@ -315,38 +315,47 @@ function renderHero() {
 }
 
 // Ziel der aktuellen Periode direkt auf «Heute» anzeigen und ändern
+let goalFormStart = null;   // Starttag der Periode, für die das Formular geöffnet wurde (gilt auch über Mitternacht)
 function renderGoalRow() {
-  const noSetup = !S.startBalance && !P.length, per = periodOf(todayIso()), goal = goalFor(per), inc = +S.income || 0;
-  $("goalRow").hidden = noSetup || !$("goalForm").hidden;
-  const range = fmtDay(per.start) + " – " + fmtDay(per.end);
-  $("goalLine").textContent = goal > 0
-    ? `Ziel ${range}: ${chf(r2(goal + inc))} nach dem Lohn${hasOwnGoal(per) ? "" : " (Standardziel)"}`
-    : `Für ${range} ist noch kein Ziel gesetzt.`;
+  const noSetup = !S.startBalance && !P.length, today = todayIso(), per = periodOf(today), goal = goalFor(per), inc = +S.income || 0;
+  const row = $("goalRow"); row.hidden = noSetup || !$("goalForm").hidden;
+  const range = fmtDay(per.start) + " – " + fmtDay(per.end), own = hasOwnGoal(per), early = !own && goal > 0 && diff(per.start, today) <= 4;
+  row.classList.toggle("attn", early);
+  $("goalLabel").textContent = early ? "Neue Periode, noch kein eigenes Ziel. Es gilt das Standardziel:" : `Kontoziel ${range}${goal > 0 && !own ? " (Standard)" : ""}`;
+  $("goalVal").textContent = goal > 0 ? `${chf(r2(goal + inc))} nach dem Lohn` : "noch nicht gesetzt";
   $("goalEdit").textContent = goal > 0 ? "Ändern" : "Ziel setzen";
   $("goalEdit").setAttribute("aria-label", (goal > 0 ? "Ziel ändern" : "Ziel setzen") + " für " + range);
 }
-function closeGoalForm(focus) { $("goalForm").hidden = true; $("gMsg").textContent = ""; $("gAmt").removeAttribute("aria-invalid"); renderGoalRow(); if (focus) $("goalEdit").focus(); }
+function closeGoalForm(focus) {
+  goalFormStart = null; $("goalForm").hidden = true; $("gMsg").textContent = "";
+  $("gAmt").removeAttribute("aria-invalid"); $("gAmt").setAttribute("aria-describedby", "gHint");
+  renderGoalRow(); if (focus) $("goalEdit").focus();
+}
 function openGoalForm() {
   const per = periodOf(todayIso()), goal = goalFor(per), inc = +S.income || 0, range = fmtDay(per.start) + " – " + fmtDay(per.end);
+  goalFormStart = per.start;
   $("gAmt").value = goal > 0 ? r2(goal + inc).toFixed(2) : "";
-  $("gHint").textContent = `Kontostand, den du am ${fmtDay(addDays(per.end, 1))} direkt nach dem Lohn haben willst. Gilt nur für ${range}.`;
+  $("gHint").textContent = `Kontostand, den du am ${fmtDay(addDays(per.end, 1))} direkt nach dem Lohn haben willst${inc > 0 ? ` (dein Lohn von ${chf(inc)} ist schon dabei)` : ""}. Gilt nur für ${range}.`;
   $("gDefault").hidden = !hasOwnGoal(per);
-  $("gMsg").textContent = ""; $("gAmt").removeAttribute("aria-invalid");
+  $("gMsg").textContent = ""; $("gAmt").removeAttribute("aria-invalid"); $("gAmt").setAttribute("aria-describedby", "gHint");
+  clearTimeout(toastTimer); $("toast").hidden = true;   // sonst verdeckt die letzte Bestätigung die Knöpfe
   $("goalForm").hidden = false; $("goalRow").hidden = true;
   $("gAmt").focus(); $("gAmt").select();
 }
 function saveGoalForm(e) {
   e.preventDefault();
-  const m = $("gMsg"), raw = $("gAmt").value.trim(), v = raw === "" ? NaN : parseAmt(raw);
-  if (Number.isNaN(v) || !(v > 0)) { $("gAmt").setAttribute("aria-invalid", "true"); m.className = "status err"; m.textContent = "Bitte eine Zahl grösser als 0 eingeben, zum Beispiel 1200."; $("gAmt").focus(); return; }
-  const per = periodOf(todayIso()), range = fmtDay(per.start) + " – " + fmtDay(per.end);
+  const m = $("gMsg"), inc = +S.income || 0, raw = $("gAmt").value.trim(), v = raw === "" ? NaN : parseAmt(raw);
+  const bad = text => { $("gAmt").setAttribute("aria-invalid", "true"); $("gAmt").setAttribute("aria-describedby", "gHint gMsg"); m.className = "status err"; m.textContent = text; $("gAmt").focus(); };
+  if (Number.isNaN(v) || !(v > 0)) return bad("Bitte eine Zahl grösser als 0 eingeben, zum Beispiel 1200.");
+  if (inc > 0 && v <= inc) return bad(`Das Ziel nach dem Lohn muss höher sein als dein Lohn von ${chf(inc)}. Beispiel: ${chf(r2(inc + 300))}.`);
+  const start = goalFormStart || periodOf(todayIso()).start, per = periodOf(start), range = fmtDay(per.start) + " – " + fmtDay(per.end);
   // Gespeichert wird das Ziel vor dem Lohn, eingegeben wird es nach dem Lohn (wie in «Mehr»)
-  S = {...S, goals:{...S.goals, [per.start]:r2(Math.max(v - (+S.income || 0), 0))}, ts:Date.now()};
+  S = {...S, goals:{...S.goals, [start]:r2(v - inc)}, ts:Date.now()};
   if (!save()) return;
   closeGoalForm(true); renderAll(); toast(`Ziel für ${range} gespeichert.`);
 }
 function resetGoalForm() {
-  const per = periodOf(todayIso()), goals = {...S.goals}; delete goals[per.start];
+  const start = goalFormStart || periodOf(todayIso()).start, goals = {...S.goals}; delete goals[start];
   S = {...S, goals, ts:Date.now()};
   if (!save()) return;
   closeGoalForm(true); renderAll(); toast("Standardziel gilt wieder.");

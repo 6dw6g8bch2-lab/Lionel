@@ -46,11 +46,11 @@
       <div class="big num" id="heroBig">–</div>
       <p class="hero-sub" id="heroSub"></p>
       <div class="goalrow" id="goalRow">
-        <span id="goalLine"></span>
-        <button class="linkbtn small" type="button" id="goalEdit">Ziel setzen</button>
+        <div class="gtext"><span class="gl" id="goalLabel"></span> <b class="gv num" id="goalVal"></b></div>
+        <button class="linkbtn" type="button" id="goalEdit">Ziel setzen</button>
       </div>
       <form class="goaledit" id="goalForm" hidden>
-        <label class="amount" for="gAmt"><span>CHF</span><input id="gAmt" type="text" inputmode="decimal" autocomplete="off" enterkeyhint="done" placeholder="0.00" aria-label="Zielbetrag nach dem Lohn in Franken" aria-describedby="gHint"></label>
+        <label class="amount" for="gAmt"><span class="sr-only">Zielbetrag nach dem Lohn, </span><span>CHF</span><input id="gAmt" type="text" inputmode="decimal" autocomplete="off" enterkeyhint="done" placeholder="0.00" aria-describedby="gHint"></label>
         <p class="hint" id="gHint"></p>
         <div class="btnrow">
           <button class="btn primary" type="submit">Ziel speichern</button>
