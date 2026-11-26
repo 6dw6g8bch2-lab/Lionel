@@ -103,6 +103,11 @@ p{margin:0}
 .big.bad{color:var(--bad)}
 .big.warn{color:var(--warn)}
 .hero-sub{font-size:.92rem}
+.goalrow{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 12px;font-size:.92rem;border-top:1px solid color-mix(in srgb,var(--fg) 10%,transparent);padding-top:6px}
+.goalrow>span{flex:1 1 200px;min-width:0}
+.goaledit{display:grid;gap:8px;border-top:1px solid color-mix(in srgb,var(--fg) 10%,transparent);padding-top:10px}
+.goaledit .amount{background:var(--surface)}
+.goaledit .amount input{font-size:1.3rem}
 .hero{padding-bottom:8px}
 .hero .pill{background:var(--surface)}
 .top .pill.neutral{background:var(--surface);border:1px solid var(--line)}
