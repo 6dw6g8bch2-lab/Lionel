@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="g" cx="62%" cy="38%" r="60%"><stop offset="0" stop-color="#ffd2b8"/><stop offset=".28" stop-color="#ff6b2b"/><stop offset=".62" stop-color="#7a1d00" stop-opacity=".55"/><stop offset="1" stop-color="#0a0a0c" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="#0a0a0c"/>
+  <circle cx="300" cy="200" r="300" fill="url(#g)"/>
+  <text x="70" y="420" font-family="-apple-system,Helvetica,Arial,sans-serif" font-weight="800" font-size="150" letter-spacing="-8" fill="#ffffff">WKS</text>
+</svg>
