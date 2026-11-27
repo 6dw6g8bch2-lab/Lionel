@@ -164,6 +164,10 @@
       <span class="pill neutral" id="carPill">Vorschlag</span>
     </header>
     <section class="card car" id="carBody" aria-label="Fortschritt"></section>
+    <section class="card" id="hisCard" aria-labelledby="hisTitle">
+      <h2 id="hisTitle">Sparverlauf</h2>
+      <div class="his" id="hisBody"></div>
+    </section>
     <section class="card">
       <details id="carEdit">
         <summary>Sparplan anpassen</summary>
@@ -175,6 +179,8 @@
             <label class="field"><span class="flabel">Schon gespart, total (CHF)</span><input id="cSaved" type="text" inputmode="decimal"></label>
             <label class="field"><span class="flabel">Lehrbeginn</span><input id="cStart" type="month"></label>
           </div>
+          <label class="field"><span class="flabel">Jeden Monat gleich viel sparen (CHF)</span><input id="cFlat" type="text" inputmode="decimal" placeholder="z. B. 200" aria-describedby="cFlatHint"></label>
+          <p class="hint" id="cFlatHint">Gilt ab jetzt und danach ab jedem Lohntag automatisch. Vergangene Monate bleiben, wie sie waren. Leer lassen oder 0, dann gelten die Beträge pro Lehrjahr unten.</p>
           <h3 class="sub">Pro Lehrjahr</h3>
           <div class="grid">
             <label class="field"><span class="flabel">Lohn 1. Jahr</span><input id="cW0" type="text" inputmode="decimal"></label>
