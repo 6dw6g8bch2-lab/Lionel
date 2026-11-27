@@ -67,6 +67,12 @@ function mergeSettings(sa, sb) {
   const goals = {...(lose.goals && typeof lose.goals === "object" ? lose.goals : {}), ...(win.goals && typeof win.goals === "object" ? win.goals : {})};
   return Object.keys(goals).length ? {...win, goals} : win;
 }
+// Sparplan: neuere Änderung gewinnt. Bei gleichem Stand gewinnt die Version, die die feste Rate kennt (ältere App-Versionen lassen sie weg).
+function pickCar(a, b) {
+  const ta = +a.ts || 0, tb = +b.ts || 0;
+  if (ta !== tb) return ta > tb ? a : b;
+  return "flat" in a || !("flat" in b) ? a : b;
+}
 function mergeData(a, b) {
   const del = {...(b.del || {}), ...(a.del || {})};
   for (const k of Object.keys(del)) del[k] = Math.max(+(a.del || {})[k] || 0, +(b.del || {})[k] || 0);
@@ -78,7 +84,7 @@ function mergeData(a, b) {
     app:"lionels-budget", v:1, exportedAt:new Date().toISOString(),
     settings:mergeSettings(sa, sb),
     payments,
-    car:!ca ? cb : !cb ? ca : ((+ca.ts || 0) >= (+cb.ts || 0) ? ca : cb),
+    car:!ca ? cb : !cb ? ca : pickCar(ca, cb),
     merchants:{...(b.merchants || {}), ...(a.merchants || {})},
     apSeen:[...new Set([...(a.apSeen || []), ...(b.apSeen || [])])],
     lastBackup:Math.max(+a.lastBackup || 0, +b.lastBackup || 0),

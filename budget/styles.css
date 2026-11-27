@@ -321,9 +321,19 @@ dialog::backdrop{background:rgb(0 0 0 / .4)}
 
 /* Sparverlauf */
 .his{display:grid;gap:12px;min-width:0}
-.his svg{display:block;width:100%;height:auto}
+.his>svg{display:block;width:100%;height:auto}
+.his .leg svg{display:block;width:18px;height:8px;flex:none}
 .his .sum{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:.92rem;color:var(--muted)}
 .his .sum b{color:var(--fg);font-weight:650}
 .his .leg{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:.82rem;color:var(--muted)}
 .his .note{font-size:.85rem;color:var(--muted);margin:0}
 .his td .pill{white-space:nowrap}
+.his .leg span{display:inline-flex;align-items:center;gap:6px}
+.his table{font-size:.85rem}
+.his th,.his td{padding:7px 4px}
+.his th:first-child,.his td:first-child{padding-left:0}
+.his th:last-child,.his td:last-child{padding-right:0}
+.his tbody th{font-weight:600;color:var(--fg);text-align:left;white-space:normal}
+.his tbody th small,.his td small{display:block;font-size:.75rem;color:var(--muted);font-weight:400}
+.his td .pill{font-size:.72rem;padding:3px 8px}
+.his .older>summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:.9rem;min-height:44px;display:flex;align-items:center}
